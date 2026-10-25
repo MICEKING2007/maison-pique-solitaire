@@ -1,0 +1,11 @@
+{
+  "name": "maison-pique-solitaire",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A refined, responsive Klondike solitaire for phone, tablet and desktop.",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "serve": "python3 -m http.server 8123 --bind 0.0.0.0"
+  }
+}

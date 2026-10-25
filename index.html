@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#071b14" />
+    <meta
+      name="description"
+      content="Maison Pique 纸牌沙龙：一款为手机、平板和电脑精心打造的经典克朗代克纸牌接龙。"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="纸牌沙龙" />
+    <title>Maison Pique · 纸牌沙龙</title>
+
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+    <link rel="preload" href="fonts/cormorant-garamond-500.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="fonts/jost-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="js/app.js"></script>
+  </head>
+
+  <body>
+    <svg class="svg-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <symbol id="suit-spade" viewBox="0 0 24 24">
+        <path d="M12 1.9c-1 2.7-7.9 7-7.9 12.1 0 2.7 2 4.7 4.6 4.7 1.1 0 2.2-.35 3.05-1.05-.15 1.95-.8 3.4-2.15 4.55h4.8c-1.35-1.15-2-2.6-2.15-4.55.85.7 1.95 1.05 3.05 1.05 2.6 0 4.6-2 4.6-4.7C19.9 8.9 13 4.6 12 1.9Z" />
+      </symbol>
+      <symbol id="suit-heart" viewBox="0 0 24 24">
+        <path d="M12 21.4S2.6 15.9 2.6 9.5c0-2.9 2.1-5 4.7-5 1.9 0 3.7 1.1 4.7 2.8 1-1.7 2.8-2.8 4.7-2.8 2.6 0 4.7 2.1 4.7 5 0 6.4-9.4 11.9-9.4 11.9Z" />
+      </symbol>
+      <symbol id="suit-club" viewBox="0 0 24 24">
+        <path d="M12 1.9a4.45 4.45 0 0 0-4.45 4.45c0 .75.18 1.45.5 2.08a4.45 4.45 0 1 0 2.7 7.12c-.14 2.45-.83 4.2-2.35 5.55h7.2c-1.52-1.35-2.21-3.1-2.35-5.55a4.45 4.45 0 1 0 2.7-7.12c.32-.63.5-1.33.5-2.08A4.45 4.45 0 0 0 12 1.9Z" />
+      </symbol>
+      <symbol id="suit-diamond" viewBox="0 0 24 24">
+        <path d="M12 1.8 21 12l-9 10.2L3 12Z" />
+      </symbol>
+
+      <symbol id="icon-undo" viewBox="0 0 24 24">
+        <path d="M9.2 6.5 4.4 11.3l4.8 4.8M4.9 11.3h8.2a5.9 5.9 0 0 1 5.9 5.9v1.2" />
+      </symbol>
+      <symbol id="icon-hint" viewBox="0 0 24 24">
+        <path d="M12 2.5c.65 4.6 2.4 6.35 7 7-4.6.65-6.35 2.4-7 7-.65-4.6-2.4-6.35-7-7 4.6-.65 6.35-2.4 7-7Z" />
+        <path d="M18.9 15.4c.28 2.05 1.05 2.82 3.1 3.1-2.05.28-2.82 1.05-3.1 3.1-.28-2.05-1.05-2.82-3.1-3.1 2.05-.28 2.82-1.05 3.1-3.1ZM5.3 2.3c.2 1.45.75 2 2.2 2.2-1.45.2-2 .75-2.2 2.2-.2-1.45-.75-2-2.2-2.2 1.45-.2 2-.75 2.2-2.2Z" />
+      </symbol>
+      <symbol id="icon-settings" viewBox="0 0 24 24">
+        <path d="M4 6.5h6M14 6.5h6M4 12h11M19 12h1M4 17.5h3M11 17.5h9" />
+        <circle cx="12" cy="6.5" r="2.1" />
+        <circle cx="17" cy="12" r="2.1" />
+        <circle cx="9" cy="17.5" r="2.1" />
+      </symbol>
+      <symbol id="icon-plus" viewBox="0 0 24 24">
+        <path d="M12 4v16M4 12h16" />
+      </symbol>
+      <symbol id="icon-close" viewBox="0 0 24 24">
+        <path d="m5.5 5.5 13 13M18.5 5.5l-13 13" />
+      </symbol>
+      <symbol id="icon-volume" viewBox="0 0 24 24">
+        <path d="M4 9.5h3.2L12 5.8v12.4l-4.8-3.7H4Z" />
+        <path d="M15.5 8.8a4.5 4.5 0 0 1 0 6.4M18.4 6a8.6 8.6 0 0 1 0 12" />
+      </symbol>
+      <symbol id="icon-mute" viewBox="0 0 24 24">
+        <path d="M4 9.5h3.2L12 5.8v12.4l-4.8-3.7H4Z" />
+        <path d="m16 9 5 5M21 9l-5 5" />
+      </symbol>
+      <symbol id="icon-install" viewBox="0 0 24 24">
+        <path d="M12 3v12M7.5 10.5 12 15l4.5-4.5M4 17.5v2.2h16v-2.2" />
+      </symbol>
+      <symbol id="icon-rules" viewBox="0 0 24 24">
+        <path d="M5 3.5h11a3 3 0 0 1 3 3v14H8a3 3 0 0 1-3-3Z" />
+        <path d="M8 3.5v14a3 3 0 0 0 3 3M11 8h4M11 11.5h4" />
+      </symbol>
+      <symbol id="icon-check" viewBox="0 0 24 24">
+        <path d="m5 12.5 4.5 4.5L19 6.5" />
+      </symbol>
+      <symbol id="icon-recycle" viewBox="0 0 24 24">
+        <path d="M18.4 8.2A7.7 7.7 0 1 0 20 14.6" />
+        <path d="M18.6 3.5v5h-5" />
+      </symbol>
+      <symbol id="icon-arrow-up" viewBox="0 0 24 24">
+        <path d="M12 20V4M5.5 10.5 12 4l6.5 6.5" />
+      </symbol>
+      <symbol id="icon-crown" viewBox="0 0 64 34">
+        <path d="M7 27 4 8l14 9L32 3l14 14 14-9-3 19Z" />
+        <path d="M9 31h46" />
+        <circle cx="4" cy="6" r="2.4" />
+        <circle cx="32" cy="1.8" r="2.4" />
+        <circle cx="60" cy="6" r="2.4" />
+      </symbol>
+    </svg>
+
+    <div class="ambient" aria-hidden="true">
+      <div class="ambient__rays"></div>
+      <div class="ambient__halo"></div>
+    </div>
+    <div class="page-frame" aria-hidden="true">
+      <i class="page-frame__corner page-frame__corner--tl"></i>
+      <i class="page-frame__corner page-frame__corner--tr"></i>
+      <i class="page-frame__corner page-frame__corner--bl"></i>
+      <i class="page-frame__corner page-frame__corner--br"></i>
+    </div>
+
+    <div class="app" id="app">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand__seal" aria-hidden="true">
+            <span class="brand__seal-inner">
+              <svg><use href="#suit-spade"></use></svg>
+            </span>
+          </span>
+          <div class="brand__copy">
+            <span class="brand__eyebrow">MAISON DE CARTES · PARIS 1925</span>
+            <h1 class="brand__title">Maison <i>Pique</i></h1>
+            <span class="brand__zh">纸牌沙龙 <b>·</b> 经典接龙</span>
+          </div>
+        </div>
+
+        <div class="stats" aria-label="本局数据">
+          <div class="stat">
+            <span class="stat__label">时间</span>
+            <span class="stat__value" id="stat-time">00:00</span>
+          </div>
+          <span class="stats__rule" aria-hidden="true"><i></i></span>
+          <div class="stat">
+            <span class="stat__label">步数</span>
+            <span class="stat__value" id="stat-moves">0</span>
+          </div>
+          <span class="stats__rule" aria-hidden="true"><i></i></span>
+          <div class="stat">
+            <span class="stat__label">得分</span>
+            <span class="stat__value" id="stat-score">0</span>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <button class="tool-btn" id="undo-btn" type="button" aria-label="撤销上一步" title="撤销 (U)">
+            <svg><use href="#icon-undo"></use></svg>
+            <span class="tool-btn__label">撤销</span>
+          </button>
+          <button class="tool-btn" id="hint-btn" type="button" aria-label="提示下一步" title="提示 (H)">
+            <svg><use href="#icon-hint"></use></svg>
+            <span class="tool-btn__label">提示</span>
+          </button>
+          <button class="tool-btn tool-btn--icon" id="menu-btn" type="button" aria-label="打开设置" title="设置">
+            <svg><use href="#icon-settings"></use></svg>
+          </button>
+          <button class="new-game-btn" id="new-game-btn" type="button">
+            <svg><use href="#icon-plus"></use></svg>
+            <span>新局</span>
+          </button>
+        </div>
+      </header>
+
+      <main class="salon">
+        <div class="table-watermark" aria-hidden="true">
+          <span class="table-watermark__orb table-watermark__orb--outer"></span>
+          <span class="table-watermark__orb table-watermark__orb--inner"></span>
+          <span class="table-watermark__spade">
+            <svg viewBox="0 0 24 24"><use href="#suit-spade"></use></svg>
+          </span>
+          <span class="table-watermark__caption">Le Salon · Maison Pique</span>
+        </div>
+        <div class="board" id="board">
+          <div class="top-row" aria-label="发牌区与基础牌堆">
+            <button class="pile stock-pile" id="stock" type="button" aria-label="牌堆，0 张，点击发牌">
+              <span class="stock-pile__well" aria-hidden="true"></span>
+            </button>
+            <div class="pile waste-pile" id="waste" role="group" aria-label="弃牌堆"></div>
+
+            <div class="house-crest" aria-hidden="true">
+              <span class="house-crest__line"></span>
+              <span class="house-crest__diamond">
+                <svg><use href="#suit-spade"></use></svg>
+              </span>
+              <span class="house-crest__line"></span>
+            </div>
+
+            <div class="pile foundation" data-foundation="0" data-suit="S" data-drop="foundation" role="button" tabindex="0" aria-label="黑桃基础牌堆">
+              <span class="foundation__empty" aria-hidden="true">
+                <svg><use href="#suit-spade"></use></svg>
+                <b>A</b>
+              </span>
+            </div>
+            <div class="pile foundation" data-foundation="1" data-suit="H" data-drop="foundation" role="button" tabindex="0" aria-label="红桃基础牌堆">
+              <span class="foundation__empty" aria-hidden="true">
+                <svg><use href="#suit-heart"></use></svg>
+                <b>A</b>
+              </span>
+            </div>
+            <div class="pile foundation" data-foundation="2" data-suit="C" data-drop="foundation" role="button" tabindex="0" aria-label="梅花基础牌堆">
+              <span class="foundation__empty" aria-hidden="true">
+                <svg><use href="#suit-club"></use></svg>
+                <b>A</b>
+              </span>
+            </div>
+            <div class="pile foundation" data-foundation="3" data-suit="D" data-drop="foundation" role="button" tabindex="0" aria-label="方块基础牌堆">
+              <span class="foundation__empty" aria-hidden="true">
+                <svg><use href="#suit-diamond"></use></svg>
+                <b>A</b>
+              </span>
+            </div>
+          </div>
+
+          <div class="tableau" id="tableau" aria-label="接龙牌列"></div>
+        </div>
+      </main>
+
+      <footer class="statusbar">
+        <div class="statusbar__inner">
+          <span class="statusbar__mark" aria-hidden="true">✦</span>
+          <p class="statusbar__text" id="status-text" role="status" aria-live="polite">
+            点按纸牌选中，再点目标位置
+          </p>
+          <button class="auto-finish" id="auto-finish" type="button" hidden>自动收牌</button>
+          <span class="draw-mode-chip" id="draw-mode-chip">单张发牌</span>
+          <span class="save-indicator" id="save-indicator" title="进度自动保存在此设备">
+            <i></i><span>已保存</span>
+          </span>
+        </div>
+      </footer>
+    </div>
+
+    <div class="drag-layer" id="drag-layer" aria-hidden="true"></div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <dialog class="modal" id="new-dialog" aria-labelledby="new-dialog-title">
+      <form method="dialog" class="modal__panel" id="new-form">
+        <span class="modal__crest" aria-hidden="true">
+          <svg><use href="#suit-spade"></use></svg>
+        </span>
+        <button class="modal__close" type="button" data-close-dialog aria-label="关闭">
+          <svg><use href="#icon-close"></use></svg>
+        </button>
+        <p class="modal__eyebrow">UNE NOUVELLE DONNE</p>
+        <h2 class="modal__title" id="new-dialog-title">开一局新牌</h2>
+        <p class="modal__lede">选择发牌节奏。无论单张还是三张，目标都是把四门花色从 A 到 K 收齐。</p>
+        <fieldset class="mode-picker">
+          <legend class="sr-only">选择发牌模式</legend>
+          <label class="mode-option">
+            <input type="radio" name="draw-mode" value="1" checked />
+            <span class="mode-option__inner">
+              <span class="mode-option__number">01</span>
+              <span class="mode-option__body">
+                <span class="mode-option__name">从容单张</span>
+                <span class="mode-option__desc">每次翻开一张，适合放松与初学</span>
+              </span>
+              <span class="mode-option__check"><svg><use href="#icon-check"></use></svg></span>
+            </span>
+          </label>
+          <label class="mode-option">
+            <input type="radio" name="draw-mode" value="3" />
+            <span class="mode-option__inner">
+              <span class="mode-option__number">03</span>
+              <span class="mode-option__body">
+                <span class="mode-option__name">经典三张</span>
+                <span class="mode-option__desc">每次翻开三张，更考验调度与耐心</span>
+              </span>
+              <span class="mode-option__check"><svg><use href="#icon-check"></use></svg></span>
+            </span>
+          </label>
+        </fieldset>
+        <p class="modal__note">开始后，当前牌局会被新牌局替换。进度会自动保存在本设备。</p>
+        <div class="modal__actions">
+          <button class="btn btn--quiet" type="button" data-close-dialog>留在牌桌</button>
+          <button class="btn btn--gold" type="submit" value="start">开始发牌</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog class="modal modal--menu" id="menu-dialog" aria-labelledby="menu-dialog-title">
+      <div class="modal__panel">
+        <button class="modal__close" type="button" data-close-dialog aria-label="关闭">
+          <svg><use href="#icon-close"></use></svg>
+        </button>
+        <p class="modal__eyebrow">LE SALON</p>
+        <h2 class="modal__title" id="menu-dialog-title">牌室设置</h2>
+
+        <div class="menu-list">
+          <div class="menu-row">
+            <span class="menu-row__icon"><svg><use href="#icon-volume"></use></svg></span>
+            <span class="menu-row__copy">
+              <span class="menu-row__name">声音与触感</span>
+              <span class="menu-row__desc">纸牌的轻响与收牌的铃声</span>
+            </span>
+            <button class="switch" id="sound-toggle" type="button" role="switch" aria-checked="true" aria-label="声音与触感">
+              <span></span>
+            </button>
+          </div>
+          <button class="menu-row menu-row--button" id="rules-btn" type="button">
+            <span class="menu-row__icon"><svg><use href="#icon-rules"></use></svg></span>
+            <span class="menu-row__copy">
+              <span class="menu-row__name">如何游玩</span>
+              <span class="menu-row__desc">规则、计分与快捷键</span>
+            </span>
+            <span class="menu-row__chevron">›</span>
+          </button>
+          <button class="menu-row menu-row--button" id="install-btn" type="button" hidden>
+            <span class="menu-row__icon"><svg><use href="#icon-install"></use></svg></span>
+            <span class="menu-row__copy">
+              <span class="menu-row__name">安装到主屏幕</span>
+              <span class="menu-row__desc">像应用一样全屏游玩</span>
+            </span>
+            <span class="menu-row__chevron">›</span>
+          </button>
+        </div>
+
+        <div class="best-card">
+          <p class="best-card__eyebrow">VOTRE MEILLEUR</p>
+          <div class="best-card__stats">
+            <div><span>胜局</span><b id="best-wins">0</b></div>
+            <div><span>最快</span><b id="best-time">—</b></div>
+            <div><span>最高分</span><b id="best-score">0</b></div>
+          </div>
+        </div>
+
+        <div class="menu-footnote">
+          <span>第 <b id="game-seed">—</b> 号牌局</span>
+          <button class="link-btn" id="reset-record-btn" type="button">清除记录</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="modal modal--rules" id="rules-dialog" aria-labelledby="rules-dialog-title">
+      <div class="modal__panel">
+        <button class="modal__close" type="button" data-close-dialog aria-label="关闭">
+          <svg><use href="#icon-close"></use></svg>
+        </button>
+        <p class="modal__eyebrow">COMMENT JOUER</p>
+        <h2 class="modal__title" id="rules-dialog-title">规则与手法</h2>
+        <div class="rules-scroll" tabindex="0" aria-label="游戏规则正文">
+          <section>
+            <h3>目标</h3>
+            <p>把四门花色分别从 A 到 K 收入右上方的四座基础牌堆，即为胜利。</p>
+          </section>
+          <section>
+            <h3>移动</h3>
+            <p>牌列按红黑交替、点数递减叠放。空牌列只能放 K。点击一张牌，再点目标位置即可移动；也可以直接拖动。连成一组的牌可以整组搬移。</p>
+          </section>
+          <section>
+            <h3>发牌</h3>
+            <p>点击左上角牌堆翻牌。单张模式每次翻一张；经典模式每次翻三张。牌堆用尽后，点击空位可重新循环弃牌堆。</p>
+          </section>
+          <section>
+            <h3>小技巧</h3>
+            <p>双击或连点两下纸牌，可以直接送入基础牌堆。翻开暗牌、收入基础牌与把弃牌移回牌列都会加分。</p>
+          </section>
+          <section>
+            <h3>计分</h3>
+            <p>收入基础牌堆 +10；翻开一张暗牌 +5；把弃牌移入牌列 +5；从基础牌堆取回一张 -15；重洗弃牌 -20。分数最低为零。</p>
+          </section>
+          <section>
+            <h3>自动收牌</h3>
+            <p>当所有余牌都已翻明、牌堆已经用尽，并且能一路收完时，牌桌下方会出现“自动收牌”按钮。</p>
+          </section>
+          <section>
+            <h3>快捷键</h3>
+            <p><kbd>Space</kbd> 发牌 · <kbd>U</kbd> 撤销 · <kbd>H</kbd> 提示 · <kbd>N</kbd> 新局 · <kbd>Esc</kbd> 取消选择</p>
+          </section>
+        </div>
+        <div class="modal__actions">
+          <button class="btn btn--gold" type="button" data-close-dialog>回到牌桌</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog class="win-dialog" id="win-dialog" aria-labelledby="win-title">
+      <canvas class="confetti" id="confetti" aria-hidden="true"></canvas>
+      <div class="win-panel">
+        <button class="modal__close win-panel__close" type="button" data-close-dialog aria-label="回到牌桌">
+          <svg><use href="#icon-close"></use></svg>
+        </button>
+        <p class="win-panel__eyebrow">LA PARTIE EST FINIE</p>
+        <div class="win-panel__emblem" aria-hidden="true">
+          <span class="win-panel__laurel">✦</span>
+          <div class="win-panel__seal">
+            <svg><use href="#suit-spade"></use></svg>
+          </div>
+          <span class="win-panel__laurel">✦</span>
+        </div>
+        <h2 class="win-panel__title" id="win-title">漂亮的收官</h2>
+        <p class="win-panel__lede">四门花色已全部归位。这一局，属于你。</p>
+        <div class="win-stats">
+          <div><span>用时</span><b id="win-time">00:00</b></div>
+          <div><span>步数</span><b id="win-moves">0</b></div>
+          <div><span>得分</span><b id="win-score">0</b></div>
+        </div>
+        <p class="win-panel__record" id="win-record" hidden>新的最佳纪录</p>
+        <div class="modal__actions modal__actions--center">
+          <button class="btn btn--quiet" type="button" data-close-dialog>看看牌桌</button>
+          <button class="btn btn--gold" id="win-new-game" type="button">再来一局</button>
+        </div>
+      </div>
+    </dialog>
+  </body>
+</html>

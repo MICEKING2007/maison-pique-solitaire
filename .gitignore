@@ -1,0 +1,7 @@
+.DS_Store
+*.log
+node_modules/
+
+# Local-network-only pairing assets generated for the desktop QR card.
+assets/lan-qr.png
+assets/play-on-phone.png
