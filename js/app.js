@@ -21,7 +21,7 @@ import {
   topCard,
   validateState,
   FOUNDATION_SUITS,
-} from './engine.js?v=1.2.0';
+} from './engine.js?v=1.3.0';
 
 const SAVE_KEY = 'maison-pique.game.v1';
 const STATS_KEY = 'maison-pique.stats.v1';
@@ -164,6 +164,7 @@ const settings = {
   sound: true,
   drawMode: 1,
   skin: 'salon',
+  soundPack: 'classic',
 };
 
 const defaultStats = () => ({
@@ -285,9 +286,25 @@ function flashSaveIndicator() {
    Sound and haptics
    -------------------------------------------------------------------------- */
 
+const AUDIO_VERSION = '1.3.0';
+const HAKIMI_TRACKS = {
+  click: [1, 2, 3, 4, 5, 6].map(
+    (index) => `audio/hakimi/click-0${index}.mp3?v=${AUDIO_VERSION}`,
+  ),
+  drop: [1, 2, 3, 4, 5].map(
+    (index) => `audio/hakimi/drop-0${index}.mp3?v=${AUDIO_VERSION}`,
+  ),
+};
+const HAKIMI_ASSETS = [...new Set([...HAKIMI_TRACKS.click, ...HAKIMI_TRACKS.drop])];
+
 const soundEngine = {
   ctx: null,
   noiseBuffer: null,
+  hakimiBuffers: new Map(),
+  hakimiLoading: null,
+  hakimiBags: { click: [], drop: [] },
+  hakimiLast: { click: '', drop: '' },
+  hakimiLastAt: { click: 0, drop: 0 },
   ensure() {
     if (!settings.sound) return null;
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -343,9 +360,84 @@ const soundEngine = {
     osc.start(start);
     osc.stop(start + duration + 0.02);
   },
+  preloadHakimi() {
+    if (!settings.sound) return Promise.resolve();
+    if (this.hakimiLoading) return this.hakimiLoading;
+    const ctx = this.ensure();
+    if (!ctx) return Promise.resolve();
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+
+    const missing = HAKIMI_ASSETS.filter((url) => !this.hakimiBuffers.has(url));
+    if (missing.length === 0) return Promise.resolve();
+
+    this.hakimiLoading = Promise.all(
+      missing.map(async (url) => {
+        const response = await fetch(url, { cache: 'force-cache' });
+        if (!response.ok) throw new Error(`Unable to load ${url}`);
+        const data = await response.arrayBuffer();
+        const buffer = await ctx.decodeAudioData(data);
+        this.hakimiBuffers.set(url, buffer);
+      }),
+    )
+      .catch(() => {
+        // If a clip cannot load, the existing synth sounds remain a fallback.
+      })
+      .finally(() => {
+        this.hakimiLoading = null;
+      });
+    return this.hakimiLoading;
+  },
+  nextHakimiUrl(kind) {
+    const tracks = HAKIMI_TRACKS[kind];
+    let bag = this.hakimiBags[kind];
+    if (!Array.isArray(bag) || bag.length === 0) {
+      bag = [...tracks];
+      for (let i = bag.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [bag[i], bag[j]] = [bag[j], bag[i]];
+      }
+      if (bag.length > 1 && bag[bag.length - 1] === this.hakimiLast[kind]) {
+        [bag[0], bag[bag.length - 1]] = [bag[bag.length - 1], bag[0]];
+      }
+      this.hakimiBags[kind] = bag;
+    }
+    const url = bag.pop();
+    this.hakimiLast[kind] = url;
+    return url;
+  },
+  playHakimi(kind) {
+    if (!settings.sound || settings.soundPack !== 'hakimi') return false;
+    const now = performance.now();
+    if (kind === 'click' && now - this.hakimiLastAt.click < 90) return true;
+    const url = this.nextHakimiUrl(kind);
+    const buffer = this.hakimiBuffers.get(url);
+    if (!buffer) {
+      this.preloadHakimi();
+      return false;
+    }
+    const ctx = this.ensure();
+    if (!ctx) return false;
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    const source = ctx.createBufferSource();
+    const amp = ctx.createGain();
+    source.buffer = buffer;
+    source.playbackRate.value = 0.985 + Math.random() * 0.03;
+    amp.gain.value = kind === 'click' ? 0.34 : 0.4;
+    source.connect(amp).connect(ctx.destination);
+    source.start();
+    this.hakimiLastAt[kind] = now;
+    return true;
+  },
   play(name) {
     if (!settings.sound) return;
     try {
+      if (settings.soundPack === 'hakimi') {
+        if ((name === 'select' || name === 'pick') && this.playHakimi('click')) return;
+      }
+      if (name === 'hakimi-drop') {
+        if (settings.soundPack === 'hakimi' && this.playHakimi('drop')) return;
+        name = 'place';
+      }
       this.ensure();
       switch (name) {
         case 'select':
@@ -428,6 +520,7 @@ function loadSettings() {
   settings.sound = stored.sound !== false;
   settings.drawMode = [1, 3].includes(Number(stored.drawMode)) ? Number(stored.drawMode) : 1;
   settings.skin = stored.skin === 'lumen' ? 'lumen' : 'salon';
+  settings.soundPack = stored.soundPack === 'hakimi' ? 'hakimi' : 'classic';
 }
 
 function saveSettings() {
@@ -1250,6 +1343,7 @@ function executeMove(from, to, { animateFrom = null, fromDrag = false } = {}) {
   state = result.state;
   gameWon = false;
   render({ animateFrom: rects, movedIds: result.cards, flipped: result.flipped });
+  if (settings.soundPack === 'hakimi') soundEngine.play('hakimi-drop');
 
   if (result.toFoundation) {
     soundEngine.play('foundation');
@@ -1258,7 +1352,7 @@ function executeMove(from, to, { animateFrom = null, fromDrag = false } = {}) {
     soundEngine.play('flip');
     setStatus(`挪开一组牌，翻开了一张暗牌 · +${result.scoreDelta} 分`, true);
   } else {
-    soundEngine.play('place');
+    if (settings.soundPack !== 'hakimi') soundEngine.play('place');
     const description = result.cards.length > 1 ? `${result.cards.length} 张连续牌` : shortCardLabel(result.cards[0]);
     setStatus(`已移动 ${description}${fromDrag ? '' : ' · 稳稳落桌'}`);
   }
@@ -1731,8 +1825,8 @@ function applySkin(skin, { announce = false } = {}) {
     manifestLink.setAttribute(
       'href',
       next === 'lumen'
-        ? 'manifest-lumen.webmanifest?v=1.2.0'
-        : 'manifest.webmanifest?v=1.2.0',
+        ? 'manifest-lumen.webmanifest?v=1.3.0'
+        : 'manifest.webmanifest?v=1.3.0',
     );
   }
 
@@ -1744,6 +1838,25 @@ function applySkin(skin, { announce = false } = {}) {
     showToast(next === 'lumen' ? '已切换到「流光」皮肤' : '已切换到「翡翠沙龙」皮肤');
     soundEngine.play('select');
     haptic(5);
+  }
+}
+
+function applySoundPack(pack, { preview = false } = {}) {
+  const next = pack === 'hakimi' ? 'hakimi' : 'classic';
+  settings.soundPack = next;
+  $$('input[name="sound-pack"]').forEach((input) => {
+    input.checked = input.value === next;
+  });
+
+  if (next === 'hakimi' && settings.sound) {
+    soundEngine.preloadHakimi();
+  }
+
+  if (!preview || !settings.sound) return;
+  if (next === 'hakimi') {
+    soundEngine.preloadHakimi().then(() => soundEngine.playHakimi('click'));
+  } else {
+    soundEngine.play('select');
   }
 }
 
@@ -2294,12 +2407,24 @@ function setupEventListeners() {
     });
   });
 
+  $$('input[name="sound-pack"]').forEach((input) => {
+    input.addEventListener('change', () => {
+      if (!input.checked) return;
+      applySoundPack(input.value, { preview: true });
+      saveSettings();
+    });
+  });
+
   els.soundToggle.addEventListener('click', () => {
     settings.sound = !settings.sound;
     updateSoundToggle();
     saveSettings();
     if (settings.sound) {
-      soundEngine.play('foundation');
+      if (settings.soundPack === 'hakimi') {
+        soundEngine.preloadHakimi().then(() => soundEngine.playHakimi('click'));
+      } else {
+        soundEngine.play('foundation');
+      }
       haptic(8);
     }
   });
@@ -2495,6 +2620,7 @@ function boot() {
   loadSettings();
   stats = loadStats();
   applySkin(settings.skin);
+  applySoundPack(settings.soundPack);
   updateSoundToggle();
 
   const saved = loadSavedGame();

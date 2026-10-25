@@ -888,6 +888,25 @@ html[data-skin='lumen'] .stock-pile.is-invalid-shake .stock-pile__well {
   border-color: rgba(211, 79, 69, 0.55);
 }
 
+html[data-skin='lumen'] .sound-pack {
+  border-color: rgba(29, 29, 31, 0.08);
+  background: rgba(29, 29, 31, 0.055);
+}
+
+html[data-skin='lumen'] .sound-pack__option {
+  color: var(--lume-sub);
+}
+
+html[data-skin='lumen'] .sound-pack__option:has(input:checked) {
+  color: #fff;
+  background: #1d1d1f;
+  box-shadow: 0 1px 4px rgba(22, 26, 44, 0.16);
+}
+
+html[data-skin='lumen'] .sound-pack__option:has(input:focus-visible) {
+  outline-color: var(--lume-accent);
+}
+
 /* Footer ------------------------------------------------------------------- */
 
 html[data-skin='lumen'] .statusbar {
