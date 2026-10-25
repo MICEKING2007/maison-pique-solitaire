@@ -1697,3 +1697,31 @@ html[data-skin='lumen'] .rules-scroll {
       0 0 0 3px rgba(78, 108, 242, 0.08);
   }
 }
+
+html[data-skin='lumen'] .difficulty-field__legend {
+  color: var(--lume-accent);
+}
+
+html[data-skin='lumen'] .difficulty-field__hint {
+  color: var(--lume-sub);
+}
+
+html[data-skin='lumen'] .difficulty-option span {
+  border-color: rgba(29, 29, 31, 0.09);
+  color: var(--lume-sub);
+  background: rgba(29, 29, 31, 0.035);
+}
+
+html[data-skin='lumen'] .difficulty-option:hover span {
+  border-color: rgba(29, 29, 31, 0.2);
+}
+
+html[data-skin='lumen'] .difficulty-option input:checked + span {
+  color: #fff;
+  border-color: #1d1d1f;
+  background: #1d1d1f;
+}
+
+html[data-skin='lumen'] .difficulty-option input:focus-visible + span {
+  outline-color: var(--lume-accent);
+}

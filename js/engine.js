@@ -38,6 +38,11 @@ export const SCORE = {
 };
 
 export const SAVE_VERSION = 1;
+export const DIFFICULTIES = ['easy', 'normal', 'hard'];
+
+export function normalizeDifficulty(value) {
+  return DIFFICULTIES.includes(value) ? value : 'normal';
+}
 
 const RANK_BY_LABEL = Object.fromEntries(
   Object.entries(RANK_LABELS).map(([rank, label]) => [label, Number(rank)]),
@@ -100,10 +105,7 @@ export function shuffle(deck, random) {
   return result;
 }
 
-export function newGame({ drawMode = 1, seed = Math.floor(Math.random() * 2 ** 31) } = {}) {
-  if (drawMode !== 1 && drawMode !== 3) {
-    throw new Error('drawMode must be 1 or 3');
-  }
+function buildDeal(seed, drawMode, difficulty) {
   const random = mulberry32(seed);
   const deck = shuffle(createDeck(), random);
   const tableau = Array.from({ length: 7 }, () => []);
@@ -123,6 +125,7 @@ export function newGame({ drawMode = 1, seed = Math.floor(Math.random() * 2 ** 3
     version: SAVE_VERSION,
     seed,
     drawMode,
+    difficulty,
     stock: deck.slice(cursor),
     waste: [],
     foundations: [[], [], [], []],
@@ -130,6 +133,86 @@ export function newGame({ drawMode = 1, seed = Math.floor(Math.random() * 2 ** 3
     score: 0,
     moves: 0,
   };
+}
+
+function openingProfile(tableau) {
+  const tops = tableau.map((pile) => pile.at(-1)?.id).filter(Boolean);
+  const suits = new Set(tops.map((id) => id[0]));
+  let moves = 0;
+
+  for (const source of tops) {
+    for (const target of tops) {
+      if (source === target) continue;
+      const from = parseCard(source);
+      const to = parseCard(target);
+      if (from.rank === to.rank - 1 && isRed(from) !== isRed(to)) moves += 1;
+    }
+  }
+
+  const ranks = tops.map((id) => parseCard(id).rank);
+  return {
+    suits: suits.size,
+    moves,
+    aces: ranks.filter((rank) => rank === 1).length,
+    lows: ranks.filter((rank) => rank <= 3).length,
+    highs: ranks.filter((rank) => rank >= 11).length,
+  };
+}
+
+function openingScore(profile) {
+  return (
+    profile.suits * 100 +
+    Math.min(profile.moves, 4) * 24 +
+    profile.aces * 18 +
+    profile.lows * 4 -
+    profile.highs * 3
+  );
+}
+
+function matchesDifficulty(level, profile) {
+  if (level === 'easy') return profile.suits >= 4 && profile.moves >= 2;
+  if (level === 'hard') return profile.suits <= 3 && profile.moves === 1 && profile.aces === 0;
+  return profile.suits >= 3 && profile.moves >= 1;
+}
+
+/**
+ * Klondike deals are generated from a seed. Easy and hard levels retry the
+ * deterministic shuffle until the opening tableau has the requested shape:
+ * easy exposes four suits with at least two legal moves; hard exposes at most
+ * three suits, exactly one legal move and no free ace. Normal keeps a lighter
+ * floor so a new hand is not immediately stuck.
+ */
+export function newGame({
+  drawMode = 1,
+  seed = Math.floor(Math.random() * 2 ** 31),
+  difficulty = 'normal',
+} = {}) {
+  if (drawMode !== 1 && drawMode !== 3) {
+    throw new Error('drawMode must be 1 or 3');
+  }
+  const level = normalizeDifficulty(difficulty);
+  const attempts = level === 'normal' ? 24 : 80;
+  const baseSeed = seed >>> 0;
+  let fallback = null;
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const candidateSeed = (
+      (baseSeed + Math.imul(attempt, 0x9e3779b1)) >>> 0
+    ) & 0x7fffffff;
+    const state = buildDeal(candidateSeed, drawMode, level);
+    const profile = openingProfile(state.tableau);
+    const score = openingScore(profile);
+
+    if (
+      !fallback ||
+      (level === 'hard' ? score < fallback.score : score > fallback.score)
+    ) {
+      fallback = { state, score };
+    }
+    if (matchesDifficulty(level, profile)) return state;
+  }
+
+  return fallback.state;
 }
 
 export function cloneState(state) {
@@ -155,6 +238,7 @@ export function serializeState(state) {
 export function validateState(state) {
   if (!state || state.version !== SAVE_VERSION) return false;
   if (![1, 3].includes(state.drawMode)) return false;
+  if (state.difficulty !== undefined && !DIFFICULTIES.includes(state.difficulty)) return false;
   if (!Array.isArray(state.stock) || !Array.isArray(state.waste)) return false;
   if (!Array.isArray(state.foundations) || state.foundations.length !== 4) return false;
   if (!Array.isArray(state.tableau) || state.tableau.length !== 7) return false;

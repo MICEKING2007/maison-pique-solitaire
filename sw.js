@@ -1,18 +1,18 @@
-const CACHE_NAME = 'maison-pique-v7';
+const CACHE_NAME = 'maison-pique-v8';
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css?v=1.4.0',
-  './lumen.css?v=1.4.0',
-  './manifest.webmanifest?v=1.4.0',
-  './manifest-lumen.webmanifest?v=1.4.0',
-  './js/app.js?v=1.4.0',
-  './js/engine.js?v=1.4.0',
-  './audio/hakimi/phrase-01.mp3?v=1.4.0',
-  './audio/hakimi/phrase-02.mp3?v=1.4.0',
-  './audio/hakimi/phrase-03.mp3?v=1.4.0',
-  './audio/hakimi/phrase-04.mp3?v=1.4.0',
-  './audio/hakimi/phrase-05.mp3?v=1.4.0',
+  './styles.css?v=1.5.0',
+  './lumen.css?v=1.5.0',
+  './manifest.webmanifest?v=1.5.0',
+  './manifest-lumen.webmanifest?v=1.5.0',
+  './js/app.js?v=1.5.0',
+  './js/engine.js?v=1.5.0',
+  './audio/hakimi/phrase-01.mp3?v=1.5.0',
+  './audio/hakimi/phrase-02.mp3?v=1.5.0',
+  './audio/hakimi/phrase-03.mp3?v=1.5.0',
+  './audio/hakimi/phrase-04.mp3?v=1.5.0',
+  './audio/hakimi/phrase-05.mp3?v=1.5.0',
   './assets/favicon.svg',
   './assets/icon-192.png',
   './assets/icon-512.png',
@@ -24,8 +24,8 @@ const APP_SHELL = [
   './fonts/jost-300.woff2',
   './fonts/jost-400.woff2',
   './fonts/jost-500.woff2',
-  './fonts/maison-serif-sc.woff2?v=1.4.0',
-  './fonts/maison-serif-sc-extra.woff2?v=1.4.0',
+  './fonts/maison-serif-sc.woff2?v=1.5.0',
+  './fonts/maison-serif-sc-extra.woff2?v=1.5.0',
 ];
 
 self.addEventListener('install', (event) => {

@@ -4,6 +4,7 @@ import {
   canPlaceOnTableau,
   cardLabel,
   cloneState,
+  DIFFICULTIES,
   draw,
   foundationIndexForCard,
   getAutoFinishPlan,
@@ -13,6 +14,7 @@ import {
   hiddenCardCount,
   isWon,
   newGame,
+  normalizeDifficulty,
   parseCard,
   RANK_LABELS,
   serializeState,
@@ -21,7 +23,7 @@ import {
   topCard,
   validateState,
   FOUNDATION_SUITS,
-} from './engine.js?v=1.4.0';
+} from './engine.js?v=1.5.0';
 
 const SAVE_KEY = 'maison-pique.game.v1';
 const STATS_KEY = 'maison-pique.stats.v1';
@@ -135,6 +137,7 @@ const els = {
   autoFinish: $('#auto-finish'),
   status: $('#status-text'),
   drawChip: $('#draw-mode-chip'),
+  difficultyHint: $('#difficulty-hint'),
   saveIndicator: $('#save-indicator'),
   toast: $('#toast'),
   dragLayer: $('#drag-layer'),
@@ -165,6 +168,13 @@ const settings = {
   drawMode: 1,
   skin: 'salon',
   soundPack: 'classic',
+  difficulty: 'easy',
+};
+
+const DIFFICULTY_META = {
+  easy: { label: '初级', hint: '起手更顺，尽量先露出不同花色' },
+  normal: { label: '中级', hint: '保留一点挑战，但不会一上来就没牌可走' },
+  hard: { label: '高级', hint: '少一些顺手牌，更值得想一步' },
 };
 
 const defaultStats = () => ({
@@ -286,7 +296,7 @@ function flashSaveIndicator() {
    Sound and haptics
    -------------------------------------------------------------------------- */
 
-const AUDIO_VERSION = '1.4.0';
+const AUDIO_VERSION = '1.5.0';
 const HAKIMI_TRACKS = [1, 2, 3, 4, 5].map(
   (index) => `audio/hakimi/phrase-0${index}.mp3?v=${AUDIO_VERSION}`,
 );
@@ -533,6 +543,7 @@ function loadSettings() {
   settings.drawMode = [1, 3].includes(Number(stored.drawMode)) ? Number(stored.drawMode) : 1;
   settings.skin = stored.skin === 'lumen' ? 'lumen' : 'salon';
   settings.soundPack = stored.soundPack === 'hakimi' ? 'hakimi' : 'classic';
+  settings.difficulty = DIFFICULTIES.includes(stored.difficulty) ? stored.difficulty : 'easy';
 }
 
 function saveSettings() {
@@ -849,7 +860,10 @@ function updateStatsDom() {
   if (!state) return;
   els.statMoves.textContent = String(state.moves);
   els.statScore.textContent = String(state.score);
-  els.drawChip.textContent = state.drawMode === 3 ? '三张发牌' : '单张发牌';
+  const difficulty = DIFFICULTY_META[normalizeDifficulty(state.difficulty)] || DIFFICULTY_META.normal;
+  const drawLabel = state.drawMode === 3 ? '三张' : '单张';
+  els.drawChip.textContent = `${difficulty.label} · ${drawLabel}`;
+  els.drawChip.setAttribute('aria-label', `难度${difficulty.label}，${drawLabel}发牌`);
   updateTimeDisplay();
 }
 
@@ -1251,13 +1265,18 @@ function pushHistory() {
   if (history.length > HISTORY_LIMIT) history.shift();
 }
 
-function beginNewGame({ drawMode = settings.drawMode, countPlayed = true } = {}) {
+function beginNewGame({
+  drawMode = settings.drawMode,
+  difficulty = state?.difficulty || settings.difficulty,
+  countPlayed = true,
+} = {}) {
   clearAutoFinishTimer();
   const mode = [1, 3].includes(Number(drawMode)) ? Number(drawMode) : 1;
+  const level = normalizeDifficulty(difficulty);
   resetTimer();
   window.clearTimeout(winRevealTimer);
   stopConfetti();
-  state = newGame({ drawMode: mode, seed: randomSeed() });
+  state = newGame({ drawMode: mode, difficulty: level, seed: randomSeed() });
   selection = null;
   hint = null;
   hintCursor = 0;
@@ -1272,6 +1291,7 @@ function beginNewGame({ drawMode = settings.drawMode, countPlayed = true } = {})
   clearTargetClasses();
   els.app.classList.remove('is-won');
   settings.drawMode = mode;
+  settings.difficulty = level;
   saveSettings();
   if (countPlayed) {
     stats.played += 1;
@@ -1805,12 +1825,23 @@ function closeAllDialogs() {
   $$('dialog[open]').forEach((dialog) => dialog.close());
 }
 
+function updateDifficultyHint(level) {
+  const meta = DIFFICULTY_META[normalizeDifficulty(level)];
+  if (els.difficultyHint) els.difficultyHint.textContent = meta.hint;
+}
+
 function openNewGameDialog() {
   if (isAutoPlaying) return;
   clearAutoFinishTimer();
   const current = state?.drawMode || settings.drawMode;
   const input = els.newForm.querySelector(`input[name="draw-mode"][value="${current}"]`);
   if (input) input.checked = true;
+  const currentDifficulty = normalizeDifficulty(settings.difficulty);
+  const difficultyInput = els.newForm.querySelector(
+    `input[name="difficulty"][value="${currentDifficulty}"]`,
+  );
+  if (difficultyInput) difficultyInput.checked = true;
+  updateDifficultyHint(currentDifficulty);
   els.newDialog.showModal();
 }
 
@@ -1837,8 +1868,8 @@ function applySkin(skin, { announce = false } = {}) {
     manifestLink.setAttribute(
       'href',
       next === 'lumen'
-        ? 'manifest-lumen.webmanifest?v=1.4.0'
-        : 'manifest.webmanifest?v=1.4.0',
+        ? 'manifest-lumen.webmanifest?v=1.5.0'
+        : 'manifest.webmanifest?v=1.5.0',
     );
   }
 
@@ -2380,15 +2411,23 @@ function setupEventListeners() {
     event.preventDefault();
     const data = new FormData(els.newForm);
     const drawMode = Number(data.get('draw-mode')) || 1;
+    const difficulty = normalizeDifficulty(data.get('difficulty'));
     els.newDialog.close();
-    beginNewGame({ drawMode, countPlayed: true });
+    beginNewGame({ drawMode, difficulty, countPlayed: true });
+  });
+
+  $$('input[name="difficulty"]').forEach((input) => {
+    input.addEventListener('change', () => {
+      if (input.checked) updateDifficultyHint(input.value);
+    });
   });
 
   els.winNewGame.addEventListener('click', () => {
     const mode = state.drawMode;
+    const difficulty = state.difficulty || settings.difficulty;
     els.winDialog.close();
     stopConfetti();
-    beginNewGame({ drawMode: mode, countPlayed: true });
+    beginNewGame({ drawMode: mode, difficulty, countPlayed: true });
   });
 
   $$('[data-close-dialog]').forEach((button) => {
@@ -2640,7 +2679,7 @@ function boot() {
   updateMetrics();
 
   if (saved) {
-    state = saved.state;
+    state = { ...saved.state, difficulty: normalizeDifficulty(saved.state.difficulty) };
     elapsedMs = saved.elapsedMs;
     hasTimerStarted = saved.hasTimerStarted;
     gameWon = false;
@@ -2655,7 +2694,11 @@ function boot() {
       }, 300);
     }
   } else {
-    beginNewGame({ drawMode: settings.drawMode, countPlayed: true });
+    beginNewGame({
+      drawMode: settings.drawMode,
+      difficulty: settings.difficulty,
+      countPlayed: true,
+    });
     setStatus(DEFAULT_STATUS);
   }
 

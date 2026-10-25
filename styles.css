@@ -53,7 +53,7 @@
 }
 @font-face {
   font-family: 'Maison Serif SC';
-  src: url('fonts/maison-serif-sc.woff2?v=1.4.0') format('woff2');
+  src: url('fonts/maison-serif-sc.woff2?v=1.5.0') format('woff2');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -64,7 +64,7 @@
    the system sans. */
 @font-face {
   font-family: 'Maison Serif SC Extra';
-  src: url('fonts/maison-serif-sc-extra.woff2?v=1.4.0') format('woff2');
+  src: url('fonts/maison-serif-sc-extra.woff2?v=1.5.0') format('woff2');
   font-weight: 500;
   font-style: normal;
   font-display: swap;
@@ -3930,4 +3930,117 @@ kbd {
 .sound-pack__option:has(input:focus-visible) {
   outline: 2px solid var(--gold-bright);
   outline-offset: 2px;
+}
+
+/* Difficulty picker (new game) */
+
+.difficulty-field {
+  padding: 0;
+  margin: 0 0 16px;
+  border: 0;
+}
+
+.difficulty-field__legend {
+  padding: 0;
+  margin: 0 0 7px;
+  color: var(--gold-deep);
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.difficulty-field__hint {
+  margin: 0 0 9px;
+  color: var(--muted);
+  font-family: var(--font-ui);
+  font-size: 9.5px;
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  line-height: 1.45;
+}
+
+.difficulty-picker {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.difficulty-option {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+
+.difficulty-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.difficulty-option span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 31px;
+  border: 1px solid rgba(200, 170, 114, 0.16);
+  color: var(--muted-deep);
+  background: rgba(0, 0, 0, 0.06);
+  font-family: var(--font-ui);
+  font-size: 9.5px;
+  font-weight: 400;
+  letter-spacing: 0.09em;
+  line-height: 1;
+  transition:
+    color 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.difficulty-option:hover span {
+  border-color: rgba(200, 170, 114, 0.34);
+}
+
+.difficulty-option input:checked + span {
+  color: #10271f;
+  border-color: var(--gold-bright);
+  background: var(--gold-bright);
+}
+
+.difficulty-option input:focus-visible + span {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 2px;
+}
+
+@media (max-width: 360px) {
+  .draw-mode-chip {
+    display: inline-block;
+    padding: 2px 4px;
+    font-size: 8px;
+    letter-spacing: 0.05em;
+  }
+
+  .difficulty-field {
+    margin-bottom: 10px;
+  }
+
+  .difficulty-field__hint {
+    margin-bottom: 7px;
+  }
+
+  .difficulty-option span {
+    min-height: 29px;
+  }
+}
+
+@media (max-width: 560px) and (max-height: 700px) {
+  .draw-mode-chip {
+    display: inline-block;
+    padding: 2px 4px;
+    font-size: 8px;
+    letter-spacing: 0.05em;
+  }
 }

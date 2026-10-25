@@ -32,14 +32,14 @@
     </script>
     <title>Maison Pique · 纸牌沙龙</title>
 
-    <link rel="manifest" href="manifest.webmanifest?v=1.4.0" id="manifest-link" />
+    <link rel="manifest" href="manifest.webmanifest?v=1.5.0" id="manifest-link" />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
     <link rel="preload" href="fonts/cormorant-garamond-500.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="fonts/jost-400.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="stylesheet" href="styles.css?v=1.4.0" />
-    <link rel="stylesheet" href="lumen.css?v=1.4.0" />
-    <script type="module" src="js/app.js?v=1.4.0"></script>
+    <link rel="stylesheet" href="styles.css?v=1.5.0" />
+    <link rel="stylesheet" href="lumen.css?v=1.5.0" />
+    <script type="module" src="js/app.js?v=1.5.0"></script>
   </head>
 
   <body>
@@ -237,7 +237,7 @@
             点按纸牌选中，再点目标位置
           </p>
           <button class="auto-finish" id="auto-finish" type="button" hidden>自动收牌</button>
-          <span class="draw-mode-chip" id="draw-mode-chip">单张发牌</span>
+          <span class="draw-mode-chip" id="draw-mode-chip">初级 · 单张</span>
           <span class="save-indicator" id="save-indicator" title="进度自动保存在此设备">
             <i></i><span>已保存</span>
           </span>
@@ -258,7 +258,25 @@
         </button>
         <p class="modal__eyebrow">UNE NOUVELLE DONNE</p>
         <h2 class="modal__title" id="new-dialog-title">开一局新牌</h2>
-        <p class="modal__lede">选择发牌节奏。无论单张还是三张，目标都是把四门花色从 A 到 K 收齐。</p>
+        <p class="modal__lede">选择难度和发牌节奏。无论单张还是三张，目标都是把四门花色从 A 到 K 收齐。</p>
+        <fieldset class="difficulty-field">
+          <legend class="difficulty-field__legend">难度</legend>
+          <p class="difficulty-field__hint" id="difficulty-hint" aria-live="polite">起手更顺，尽量先露出不同花色</p>
+          <div class="difficulty-picker" role="radiogroup" aria-label="难度">
+            <label class="difficulty-option">
+              <input type="radio" name="difficulty" value="easy" checked />
+              <span>初级</span>
+            </label>
+            <label class="difficulty-option">
+              <input type="radio" name="difficulty" value="normal" />
+              <span>中级</span>
+            </label>
+            <label class="difficulty-option">
+              <input type="radio" name="difficulty" value="hard" />
+              <span>高级</span>
+            </label>
+          </div>
+        </fieldset>
         <fieldset class="mode-picker">
           <legend class="sr-only">选择发牌模式</legend>
           <label class="mode-option">
@@ -392,7 +410,7 @@
         </div>
 
         <div class="menu-footnote">
-          <span>第 <b id="game-seed">—</b> 号牌局 · <span class="app-version">v1.4.0</span></span>
+          <span>第 <b id="game-seed">—</b> 号牌局 · <span class="app-version">v1.5.0</span></span>
           <button class="link-btn" id="reset-record-btn" type="button">清除记录</button>
         </div>
       </div>

@@ -7,12 +7,15 @@ import {
   canPlaceOnTableau,
   cloneState,
   createDeck,
+  DIFFICULTIES,
   draw,
   getAutoFinishPlan,
   getHints,
   getMovableRun,
+  isRed,
   isWon,
   newGame,
+  normalizeDifficulty,
   parseCard,
   validateState,
 } from '../js/engine.js';
@@ -38,6 +41,26 @@ function up(...ids) {
 
 function down(...ids) {
   return ids.map((id) => ({ id, up: false }));
+}
+
+function openingProfile(state) {
+  const tops = state.tableau.map((pile) => pile.at(-1)?.id).filter(Boolean);
+  const suits = new Set(tops.map((id) => id[0]));
+  let moves = 0;
+  for (const source of tops) {
+    for (const target of tops) {
+      if (source === target) continue;
+      const from = parseCard(source);
+      const to = parseCard(target);
+      if (from.rank === to.rank - 1 && isRed(from) !== isRed(to)) moves += 1;
+    }
+  }
+  const ranks = tops.map((id) => parseCard(id).rank);
+  return {
+    suits: suits.size,
+    moves,
+    aces: ranks.filter((rank) => rank === 1).length,
+  };
 }
 
 test('new game deals 52 unique cards with seven valid columns', () => {
@@ -66,6 +89,33 @@ test('new game is deterministic for a seed and changes with another', () => {
   const c = newGame({ seed: 100 });
   assert.deepEqual(a, b);
   assert.notDeepEqual(a.stock, c.stock);
+});
+
+test('difficulty levels shape the opening tableau and remain deterministic', () => {
+  for (const seed of [42, 99, 123, 999]) {
+    const easy = newGame({ seed, difficulty: 'easy' });
+    const normal = newGame({ seed, difficulty: 'normal' });
+    const hard = newGame({ seed, difficulty: 'hard' });
+    const easyProfile = openingProfile(easy);
+    const normalProfile = openingProfile(normal);
+    const hardProfile = openingProfile(hard);
+
+    assert.equal(easy.difficulty, 'easy');
+    assert.equal(normal.difficulty, 'normal');
+    assert.equal(hard.difficulty, 'hard');
+    assert.ok(easyProfile.suits === 4, `easy seed ${seed} suits: ${easyProfile.suits}`);
+    assert.ok(easyProfile.moves >= 2, `easy seed ${seed} moves: ${easyProfile.moves}`);
+    assert.ok(normalProfile.suits >= 3, `normal seed ${seed} suits: ${normalProfile.suits}`);
+    assert.ok(normalProfile.moves >= 1, `normal seed ${seed} moves: ${normalProfile.moves}`);
+    assert.ok(hardProfile.suits <= 3, `hard seed ${seed} suits: ${hardProfile.suits}`);
+    assert.equal(hardProfile.moves, 1, `hard seed ${seed} moves: ${hardProfile.moves}`);
+    assert.equal(hardProfile.aces, 0, `hard seed ${seed} aces: ${hardProfile.aces}`);
+
+    assert.deepEqual(easy, newGame({ seed, difficulty: 'easy' }));
+    assert.deepEqual(hard, newGame({ seed, difficulty: 'hard' }));
+  }
+  assert.equal(normalizeDifficulty('unknown'), 'normal');
+  assert.deepEqual(DIFFICULTIES, ['easy', 'normal', 'hard']);
 });
 
 test('draw one cycles the stock and preserves deal order on recycle', () => {
@@ -295,6 +345,14 @@ test('saved state validator accepts complete games and rejects tampering', () =>
   badOrder.tableau[1][0].up = true;
   badOrder.tableau[1][1].up = false;
   assert.equal(validateState(badOrder), false);
+
+  const badDifficulty = cloneState(state);
+  badDifficulty.difficulty = 'legendary';
+  assert.equal(validateState(badDifficulty), false);
+
+  const legacy = cloneState(state);
+  delete legacy.difficulty;
+  assert.equal(validateState(legacy), true);
 });
 
 test('recycling the waste costs points but never drops below zero', () => {
