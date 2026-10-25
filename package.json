@@ -1,6 +1,6 @@
 {
   "name": "maison-pique-solitaire",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "type": "module",
   "description": "A refined, responsive Klondike solitaire for phone, tablet and desktop.",

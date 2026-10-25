@@ -1,11 +1,11 @@
-const CACHE_NAME = 'maison-pique-v3';
+const CACHE_NAME = 'maison-pique-v4';
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css?v=1.1.0',
-  './manifest.webmanifest?v=1.1.0',
-  './js/app.js?v=1.1.0',
-  './js/engine.js?v=1.1.0',
+  './styles.css?v=1.1.1',
+  './manifest.webmanifest?v=1.1.1',
+  './js/app.js?v=1.1.1',
+  './js/engine.js?v=1.1.1',
   './assets/favicon.svg',
   './assets/icon-192.png',
   './assets/icon-512.png',
@@ -17,8 +17,8 @@ const APP_SHELL = [
   './fonts/jost-300.woff2',
   './fonts/jost-400.woff2',
   './fonts/jost-500.woff2',
-  './fonts/maison-serif-sc.woff2?v=1.1.0',
-  './fonts/maison-serif-sc-extra.woff2?v=1.1.0',
+  './fonts/maison-serif-sc.woff2?v=1.1.1',
+  './fonts/maison-serif-sc-extra.woff2?v=1.1.1',
 ];
 
 self.addEventListener('install', (event) => {

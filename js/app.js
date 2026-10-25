@@ -21,7 +21,7 @@ import {
   topCard,
   validateState,
   FOUNDATION_SUITS,
-} from './engine.js?v=1.1.0';
+} from './engine.js?v=1.1.1';
 
 const SAVE_KEY = 'maison-pique.game.v1';
 const STATS_KEY = 'maison-pique.stats.v1';
@@ -571,9 +571,12 @@ function scheduleLayout() {
       dragZonesTimer = window.setTimeout(() => {
         dragZonesTimer = null;
         if (!drag?.active) return;
-        const { zones, tableauTop } = buildDropZones(drag.source);
+        const { zones, tableauTop, topRowTop, topRowBottom } = buildDropZones(drag.source);
         drag.zones = zones;
         drag.zonesTop = tableauTop;
+        drag.topRowTop = topRowTop;
+        drag.topRowBottom = topRowBottom;
+        drag.validCount = zones.length;
         renderDragFrame();
       }, 50);
       return;
@@ -1753,6 +1756,7 @@ function buildDropZones(source) {
   });
 
   const tableRect = els.tableau.getBoundingClientRect();
+  const topRect = document.querySelector('.top-row')?.getBoundingClientRect();
   const tableauPad = snapPad;
   const topLimit = tableRect.top - Math.max(6, metrics.gap);
   const bottomLimit = tableRect.bottom + Math.max(10, metrics.cardH * 0.2);
@@ -1773,7 +1777,13 @@ function buildDropZones(source) {
     });
   });
 
-  return { zones, destinations, tableauTop: tableRect.top };
+  return {
+    zones,
+    destinations,
+    tableauTop: tableRect.top,
+    topRowTop: topRect?.top ?? 0,
+    topRowBottom: topRect?.bottom ?? 0,
+  };
 }
 
 function nearestZone(zones, x, y) {
@@ -1794,6 +1804,18 @@ function nearestZone(zones, x, y) {
 
 function findDropZone(x, y) {
   if (!drag?.zones?.length) return null;
+
+  const allFoundations = drag.zones.filter((zone) => zone.type === 'foundation');
+  if (allFoundations.length > 0) {
+    // A single valid foundation is a huge, forgiving drop target: anywhere in
+    // the whole top row should magnetise to it. This is what makes an Ace drop
+    // work without first pressing the hint button.
+    const bandPad = Math.max(10, metrics.cardH * 0.09);
+    if (y >= drag.topRowTop - bandPad && y <= drag.topRowBottom + bandPad) {
+      return nearestZone(allFoundations, x, y);
+    }
+  }
+
   const hits = [];
   for (const zone of drag.zones) {
     if (x < zone.left || x > zone.right || y < zone.top || y > zone.bottom) continue;
@@ -1811,6 +1833,43 @@ function findDropZone(x, y) {
   }
   if (tableaus.length > 0) return nearestZone(tableaus, x, y);
   return nearestZone(foundations, x, y);
+}
+
+function findDropZoneFromPoint(x, y) {
+  if (!drag || typeof document.elementsFromPoint !== 'function') return null;
+  const destinations = getValidDestinations(drag.source);
+  const stack = document.elementsFromPoint(x, y);
+
+  for (const element of stack) {
+    if (!element?.closest) continue;
+    const foundation = element.closest('.foundation');
+    if (foundation) {
+      const pile = Number(foundation.dataset.foundation);
+      if (destinations.foundations.includes(pile)) {
+        return (
+          drag.zones.find((zone) => zone.type === 'foundation' && zone.pile === pile) || {
+            type: 'foundation',
+            pile,
+            element: foundation,
+          }
+        );
+      }
+    }
+    const column = element.closest('.tableau-col');
+    if (column) {
+      const pile = Number(column.dataset.tableau);
+      if (destinations.tableau.includes(pile)) {
+        return (
+          drag.zones.find((zone) => zone.type === 'tableau' && zone.pile === pile) || {
+            type: 'tableau',
+            pile,
+            element: column,
+          }
+        );
+      }
+    }
+  }
+  return null;
 }
 
 function distanceToZone(zone, x, y) {
@@ -1839,6 +1898,9 @@ function setDragZone(zone) {
   drag.hoverZone = null;
   if (!zone) {
     drag.ghost?.classList.remove('is-snapped');
+    if (drag.validCount > 0) {
+      setStatus('拖到金色发光位置 · 松手自动吸附');
+    }
     return;
   }
   drag.hoverZone = zone;
@@ -1848,6 +1910,12 @@ function setDragZone(zone) {
   zone.element.classList.add('is-drag-over');
   drag.hoverCard?.classList.add('is-drag-hover');
   drag.ghost?.classList.add('is-snapped');
+  const target =
+    zone.type === 'foundation'
+      ? `${FOUNDATION_NAMES[FOUNDATION_SUITS[zone.pile]]}基础牌堆`
+      : `第 ${zone.pile + 1} 列`;
+  setStatus(`吸附 · 松手放入${target}`, true);
+  haptic(3);
 }
 
 function scheduleDragFrame() {
@@ -1914,7 +1982,7 @@ function beginDrag(event, cardEl) {
     .filter(Boolean);
   sourceElements.forEach((el) => el.classList.add('is-dragging-source'));
 
-  const { zones, tableauTop } = buildDropZones(source);
+  const { zones, tableauTop, topRowTop, topRowBottom } = buildDropZones(source);
   drag = {
     pointerId: event.pointerId,
     source,
@@ -1929,6 +1997,9 @@ function beginDrag(event, cardEl) {
     startRect: rect,
     zones,
     zonesTop: tableauTop,
+    topRowTop,
+    topRowBottom,
+    validCount: zones.length,
     hoverZone: null,
     hoverEl: null,
     hoverCard: null,
@@ -1937,6 +2008,12 @@ function beginDrag(event, cardEl) {
     active: true,
   };
   document.body.classList.add('is-dragging');
+  setStatus(
+    zones.length > 0
+      ? '拖到金色发光位置 · 松手自动吸附'
+      : '这张牌现在没有可放的位置',
+    true,
+  );
   renderDragFrame();
   soundEngine.play('pick');
   haptic(5);
@@ -1981,9 +2058,14 @@ function finishDrag(zone = null) {
     return;
   }
 
+  const hadTargets = drag.validCount > 0;
   cleanupDrag({ restoreSelection: true });
   soundEngine.play('pick');
-  setStatus('没有落在这里 · 靠近发光牌列即可自动吸附');
+  setStatus(
+    hadTargets
+      ? '没有落在这里 · 拖到金色发光位置，或点选后点落点'
+      : '这张牌现在没有可放的位置 · 换一张试试',
+  );
   haptic(5);
 }
 
@@ -2021,37 +2103,54 @@ function onPointerDown(event) {
     pending: true,
     active: false,
   };
-  // Window-level pointer listeners keep tracking after the pointer leaves the
-  // card. The synthetic click after a drag is suppressed in finishDrag().
-  try {
-    cardEl.setPointerCapture(event.pointerId);
-  } catch {
-    // Pointer capture is a convenience, not a requirement.
+  // Window-level pointer listeners track the gesture. We deliberately avoid
+  // explicit pointer capture here: iOS Safari is more reliable when the native
+  // tap/click path is left untouched, and the listeners work without capture.
+}
+
+function sourceCardForCandidate(candidate) {
+  return (
+    document.querySelector(`.card[data-card-id="${candidate.cards[0]}"].is-interactive`) ||
+    document.querySelector(
+      `.card[data-src-type="${candidate.source.type}"][data-src-pile="${candidate.source.pile}"]`,
+    )
+  );
+}
+
+function tryStartDragFromCandidate(event) {
+  if (!drag?.pending) return false;
+  const hasCoords = Number.isFinite(event.clientX) && Number.isFinite(event.clientY);
+  const isBlankCoordinate = event.clientX === 0 && event.clientY === 0;
+  const x = hasCoords && !isBlankCoordinate ? event.clientX : drag.startX;
+  const y = hasCoords && !isBlankCoordinate ? event.clientY : drag.startY;
+  if (Math.hypot(x - drag.startX, y - drag.startY) < 7) return false;
+
+  const candidate = drag;
+  const card = sourceCardForCandidate(candidate);
+  if (!card) {
+    drag = null;
+    return false;
   }
+  candidate.pending = false;
+  drag = null;
+  beginDrag(
+    {
+      pointerId: candidate.pointerId,
+      clientX: candidate.startX,
+      clientY: candidate.startY,
+    },
+    card,
+  );
+  if (!drag?.active) return false;
+  drag.currentX = x;
+  drag.currentY = y;
+  return true;
 }
 
 function onPointerMove(event) {
   if (!drag || event.pointerId !== drag.pointerId) return;
-  if (drag.pending) {
-    if (Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) < 7) return;
-    drag.pending = false;
-    const card = document.querySelector(`.card[data-card-id="${drag.cards[0]}"].is-interactive`) ||
-      document.querySelector(`.card[data-src-type="${drag.source.type}"][data-src-pile="${drag.source.pile}"]`);
-    if (!card) {
-      drag = null;
-      return;
-    }
-    beginDrag(
-      {
-        pointerId: drag.pointerId,
-        clientX: drag.startX,
-        clientY: drag.startY,
-      },
-      card,
-    );
-    if (!drag) return;
-  }
-  if (!drag.active) return;
+  if (drag.pending && !tryStartDragFromCandidate(event)) return;
+  if (!drag?.active) return;
   event.preventDefault();
   drag.currentX = event.clientX;
   drag.currentY = event.clientY;
@@ -2060,7 +2159,13 @@ function onPointerMove(event) {
 
 function onPointerUp(event) {
   if (!drag || event.pointerId !== drag.pointerId) return;
-  if (!drag.active) {
+  if (drag.pending) {
+    if (!tryStartDragFromCandidate(event)) {
+      drag = null;
+      return;
+    }
+  }
+  if (!drag?.active) {
     drag = null;
     return;
   }
@@ -2077,6 +2182,7 @@ function onPointerUp(event) {
   renderDragFrame();
 
   let zone = drag.hoverZone;
+  if (!zone) zone = findDropZoneFromPoint(drag.currentX, drag.currentY);
   if (!zone && drag.lastValidZone) {
     const tolerance = dragSnapTolerance();
     if (distanceToZone(drag.lastValidZone, drag.currentX, drag.currentY) <= tolerance) {
