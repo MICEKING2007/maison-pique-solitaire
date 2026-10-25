@@ -21,7 +21,7 @@ import {
   topCard,
   validateState,
   FOUNDATION_SUITS,
-} from './engine.js?v=1.3.0';
+} from './engine.js?v=1.4.0';
 
 const SAVE_KEY = 'maison-pique.game.v1';
 const STATS_KEY = 'maison-pique.stats.v1';
@@ -286,25 +286,20 @@ function flashSaveIndicator() {
    Sound and haptics
    -------------------------------------------------------------------------- */
 
-const AUDIO_VERSION = '1.3.0';
-const HAKIMI_TRACKS = {
-  click: [1, 2, 3, 4, 5, 6].map(
-    (index) => `audio/hakimi/click-0${index}.mp3?v=${AUDIO_VERSION}`,
-  ),
-  drop: [1, 2, 3, 4, 5].map(
-    (index) => `audio/hakimi/drop-0${index}.mp3?v=${AUDIO_VERSION}`,
-  ),
-};
-const HAKIMI_ASSETS = [...new Set([...HAKIMI_TRACKS.click, ...HAKIMI_TRACKS.drop])];
+const AUDIO_VERSION = '1.4.0';
+const HAKIMI_TRACKS = [1, 2, 3, 4, 5].map(
+  (index) => `audio/hakimi/phrase-0${index}.mp3?v=${AUDIO_VERSION}`,
+);
+const HAKIMI_ASSETS = HAKIMI_TRACKS;
 
 const soundEngine = {
   ctx: null,
   noiseBuffer: null,
   hakimiBuffers: new Map(),
   hakimiLoading: null,
-  hakimiBags: { click: [], drop: [] },
-  hakimiLast: { click: '', drop: '' },
-  hakimiLastAt: { click: 0, drop: 0 },
+  hakimiBag: [],
+  hakimiLast: '',
+  hakimiVoice: null,
   ensure() {
     if (!settings.sound) return null;
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -387,29 +382,41 @@ const soundEngine = {
       });
     return this.hakimiLoading;
   },
-  nextHakimiUrl(kind) {
-    const tracks = HAKIMI_TRACKS[kind];
-    let bag = this.hakimiBags[kind];
+  nextHakimiUrl() {
+    let bag = this.hakimiBag;
     if (!Array.isArray(bag) || bag.length === 0) {
-      bag = [...tracks];
+      bag = [...HAKIMI_TRACKS];
       for (let i = bag.length - 1; i > 0; i -= 1) {
         const j = Math.floor(Math.random() * (i + 1));
         [bag[i], bag[j]] = [bag[j], bag[i]];
       }
-      if (bag.length > 1 && bag[bag.length - 1] === this.hakimiLast[kind]) {
+      if (bag.length > 1 && bag[bag.length - 1] === this.hakimiLast) {
         [bag[0], bag[bag.length - 1]] = [bag[bag.length - 1], bag[0]];
       }
-      this.hakimiBags[kind] = bag;
+      this.hakimiBag = bag;
     }
     const url = bag.pop();
-    this.hakimiLast[kind] = url;
+    this.hakimiLast = url;
     return url;
   },
-  playHakimi(kind) {
+  stopHakimiVoice(ctx) {
+    if (!this.hakimiVoice) return;
+    const previous = this.hakimiVoice;
+    this.hakimiVoice = null;
+    try {
+      previous.gain.gain.cancelScheduledValues(ctx.currentTime);
+      previous.gain.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.018);
+      previous.source.stop(ctx.currentTime + 0.07);
+    } catch {
+      // The source may already have ended.
+    }
+  },
+  playHakimi(kind = 'click') {
     if (!settings.sound || settings.soundPack !== 'hakimi') return false;
-    const now = performance.now();
-    if (kind === 'click' && now - this.hakimiLastAt.click < 90) return true;
-    const url = this.nextHakimiUrl(kind);
+    // Let a full phrase finish when the player is just selecting cards.
+    // A real placement can take over with a new phrase.
+    if (this.hakimiVoice && kind === 'click') return true;
+    const url = this.nextHakimiUrl();
     const buffer = this.hakimiBuffers.get(url);
     if (!buffer) {
       this.preloadHakimi();
@@ -418,14 +425,19 @@ const soundEngine = {
     const ctx = this.ensure();
     if (!ctx) return false;
     if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    this.stopHakimiVoice(ctx);
     const source = ctx.createBufferSource();
-    const amp = ctx.createGain();
+    const gain = ctx.createGain();
     source.buffer = buffer;
-    source.playbackRate.value = 0.985 + Math.random() * 0.03;
-    amp.gain.value = kind === 'click' ? 0.34 : 0.4;
-    source.connect(amp).connect(ctx.destination);
+    source.playbackRate.value = 1;
+    gain.gain.value = kind === 'click' ? 0.42 : 0.46;
+    source.connect(gain).connect(ctx.destination);
+    const voice = { source, gain };
+    this.hakimiVoice = voice;
+    source.onended = () => {
+      if (this.hakimiVoice === voice) this.hakimiVoice = null;
+    };
     source.start();
-    this.hakimiLastAt[kind] = now;
     return true;
   },
   play(name) {
@@ -1825,8 +1837,8 @@ function applySkin(skin, { announce = false } = {}) {
     manifestLink.setAttribute(
       'href',
       next === 'lumen'
-        ? 'manifest-lumen.webmanifest?v=1.3.0'
-        : 'manifest.webmanifest?v=1.3.0',
+        ? 'manifest-lumen.webmanifest?v=1.4.0'
+        : 'manifest.webmanifest?v=1.4.0',
     );
   }
 
