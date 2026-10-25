@@ -305,3 +305,123 @@ test('recycling the waste costs points but never drops below zero', () => {
   assert.equal(result.state.score, 0);
   assert.deepEqual(result.state.stock, ['S2']);
 });
+
+test('hints avoid pointless reversible tableau shuffles and fall back to drawing', () => {
+  const state = makeState({
+    stock: ['H1'],
+    tableau: [up('D8', 'S7'), up('H8'), ...Array.from({ length: 5 }, () => [])],
+  });
+  const hints = getHints(state);
+  assert.equal(hints.length, 1);
+  assert.equal(hints[0].kind, 'draw');
+  assert.equal(hints.some((hint) => hint.from?.type === 'tableau'), false);
+
+  const deadEnd = makeState({
+    tableau: [up('D8', 'S7'), up('H8'), ...Array.from({ length: 5 }, () => [])],
+  });
+  assert.deepEqual(getHints(deadEnd), []);
+});
+
+test('hints can recommend a visible setup that unlocks a foundation move', () => {
+  const state = makeState({
+    foundations: [['S1', 'S2'], [], [], []],
+    tableau: [up('S3', 'H4'), up('C5'), ...Array.from({ length: 5 }, () => [])],
+  });
+  const hints = getHints(state);
+  const setup = hints.find(
+    (hint) =>
+      hint.kind === 'setup' &&
+      hint.from.type === 'tableau' &&
+      hint.from.pile === 0 &&
+      hint.from.index === 1 &&
+      hint.to.type === 'tableau' &&
+      hint.to.pile === 1,
+  );
+  assert.ok(setup);
+  assert.equal(setup.cardId, 'H4');
+  const result = applyMove(state, { from: setup.from, to: setup.to });
+  assert.equal(result.ok, true);
+  assert.equal(result.state.tableau[0].at(-1).id, 'S3');
+  assert.ok(
+    getHints(result.state).some(
+      (hint) => hint.kind === 'foundation' && hint.cardId === 'S3',
+    ),
+  );
+});
+
+test('every returned hint is legal and hints do not immediately reverse each other', () => {
+  for (const seed of [1, 7, 42, 123, 999]) {
+    let state = newGame({ seed, drawMode: 1 });
+    let previousMove = null;
+    const seenHints = new Set();
+
+    for (let step = 0; step < 50; step += 1) {
+      const hints = getHints(state);
+      if (hints.length === 0) break;
+
+      for (const hint of hints) {
+        const key = `${hint.kind}:${hint.from?.type ?? 'none'}:${hint.from?.pile ?? ''}:${hint.from?.index ?? ''}->${hint.to?.type ?? 'none'}:${hint.to?.pile ?? ''}`;
+        assert.equal(seenHints.has(key), false, `duplicate hint: ${key}`);
+        seenHints.add(key);
+      }
+
+      const hint = hints[0];
+      if (hint.kind === 'draw' || hint.kind === 'recycle') {
+        const result = draw(state);
+        assert.equal(result.ok, true);
+        state = result.state;
+        previousMove = null;
+        seenHints.clear();
+        continue;
+      }
+
+      const result = applyMove(state, { from: hint.from, to: hint.to });
+      assert.equal(result.ok, true, `illegal hint: ${hint.kind}`);
+
+      if (previousMove) {
+        const reverse =
+          previousMove.from.type === hint.to.type &&
+          previousMove.from.pile === hint.to.pile &&
+          previousMove.to.type === hint.from.type &&
+          previousMove.to.pile === hint.from.pile &&
+          previousMove.cardId === hint.cardId;
+        assert.equal(reverse, false, `hint reversed immediately for seed ${seed}`);
+      }
+      previousMove = hint;
+      state = result.state;
+      seenHints.clear();
+    }
+  }
+});
+
+test('all 52 cards remain accounted for across long hint-driven games', () => {
+  for (const seed of [3, 11, 29, 77, 101]) {
+    let state = newGame({ seed, drawMode: seed % 2 === 0 ? 3 : 1 });
+
+    for (let step = 0; step < 120; step += 1) {
+      const allIds = [
+        ...state.stock,
+        ...state.waste,
+        ...state.foundations.flat(),
+        ...state.tableau.flat().map((entry) => entry.id),
+      ];
+      assert.equal(allIds.length, 52);
+      assert.equal(new Set(allIds).size, 52, `duplicate or missing card for seed ${seed}`);
+      assert.ok(allIds.includes('H1'), `heart ace missing for seed ${seed}`);
+      assert.equal(validateState(state), true);
+
+      const hints = getHints(state);
+      if (hints.length === 0) break;
+      const hint = hints[0];
+      if (hint.kind === 'draw' || hint.kind === 'recycle') {
+        const result = draw(state);
+        assert.equal(result.ok, true);
+        state = result.state;
+      } else {
+        const result = applyMove(state, { from: hint.from, to: hint.to });
+        assert.equal(result.ok, true);
+        state = result.state;
+      }
+    }
+  }
+});

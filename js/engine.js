@@ -460,44 +460,32 @@ export function canUndo(state) {
   return state.moves > 0;
 }
 
-/** Suggested moves, strongest first. */
-export function getHints(state) {
-  const hints = [];
+/** Stable identifier for a concrete from/to move. */
+function hintMoveKey(move) {
+  if (!move?.from || !move?.to) return '';
+  const from = `${move.from.type}:${move.from.pile ?? ''}:${move.from.index ?? ''}`;
+  const to = `${move.to.type}:${move.to.pile ?? ''}`;
+  return `${from}->${to}`;
+}
+
+/**
+ * Moves that make visible progress: send a card to a foundation, turn up a
+ * hidden card, or bring the top waste card back into a tableau column. This
+ * deliberately uses only information the player can see.
+ */
+function getDirectProgressMoves(state) {
+  const moves = [];
   const seen = new Set();
-  const add = (hint) => {
-    const key = `${hint.from?.type}${hint.from?.pile ?? ''}${hint.from?.index ?? ''}->${hint.to?.type}${hint.to?.pile ?? ''}-${hint.kind}`;
-    if (seen.has(key)) return;
+  const add = (move) => {
+    const key = hintMoveKey(move);
+    if (!key || seen.has(key)) return;
     seen.add(key);
-    hints.push(hint);
+    moves.push(move);
   };
 
   for (const move of findAllFoundationTargets(state)) {
-    add({ ...move, kind: 'foundation' });
+    add({ ...move, kind: 'foundation', priority: 1000 });
   }
-
-  // Moves that reveal a face-down card.
-  state.tableau.forEach((pile, sourceIndex) => {
-    if (pile.length < 2 || pile[0].up) return;
-    for (let start = 0; start < pile.length; start += 1) {
-      if (!pile[start].up) continue;
-      const previous = pile[start - 1];
-      if (start === 0 || previous?.up) continue;
-      const cards = getMovableRun(state, sourceIndex, start);
-      if (!cards.length) continue;
-      for (let target = 0; target < 7; target += 1) {
-        if (target === sourceIndex) continue;
-        if (canPlaceOnTableau(state, cards, target)) {
-          add({
-            from: { type: 'tableau', pile: sourceIndex, index: start },
-            to: { type: 'tableau', pile: target },
-            cardId: cards[0],
-            kind: 'reveal',
-            priority: 90,
-          });
-        }
-      }
-    }
-  });
 
   const wasteTop = topCard(state.waste);
   if (wasteTop) {
@@ -508,14 +496,40 @@ export function getHints(state) {
           to: { type: 'tableau', pile: target },
           cardId: wasteTop,
           kind: 'tableau',
-          priority: 70,
+          priority: 600,
         });
       }
     }
   }
 
-  // Other sensible run moves. A king alone on an empty column is rarely useful
-  // unless it exposes a hidden card, so those are excluded by the reveal pass.
+  // A run move that exposes a face-down card is always an immediate gain.
+  state.tableau.forEach((pile, sourceIndex) => {
+    if (pile.length < 2 || pile[0].up) return;
+    for (let start = 1; start < pile.length; start += 1) {
+      if (!pile[start].up || pile[start - 1].up) continue;
+      const cards = getMovableRun(state, sourceIndex, start);
+      if (!cards.length) continue;
+      for (let target = 0; target < 7; target += 1) {
+        if (target === sourceIndex) continue;
+        if (!canPlaceOnTableau(state, cards, target)) continue;
+        add({
+          from: { type: 'tableau', pile: sourceIndex, index: start },
+          to: { type: 'tableau', pile: target },
+          cardId: cards[0],
+          kind: 'reveal',
+          priority: 800,
+        });
+      }
+    }
+  });
+
+  return moves;
+}
+
+/** All legal tableau-to-tableau runs, used to find one-move setups. */
+function getTableauMoves(state) {
+  const moves = [];
+  const seen = new Set();
   state.tableau.forEach((pile, sourceIndex) => {
     for (let start = 0; start < pile.length; start += 1) {
       if (!pile[start].up) continue;
@@ -523,28 +537,84 @@ export function getHints(state) {
       if (!cards.length) continue;
       for (let target = 0; target < 7; target += 1) {
         if (target === sourceIndex) continue;
-        if (canPlaceOnTableau(state, cards, target)) {
-          add({
-            from: { type: 'tableau', pile: sourceIndex, index: start },
-            to: { type: 'tableau', pile: target },
-            cardId: cards[0],
-            kind: 'shuffle',
-            priority: 50,
-          });
-        }
+        if (!canPlaceOnTableau(state, cards, target)) continue;
+        const move = {
+          from: { type: 'tableau', pile: sourceIndex, index: start },
+          to: { type: 'tableau', pile: target },
+          cardId: cards[0],
+        };
+        const key = hintMoveKey(move);
+        if (seen.has(key)) continue;
+        seen.add(key);
+        moves.push(move);
       }
     }
   });
+  return moves;
+}
 
-  if (hints.length === 0) {
-    if (state.stock.length > 0) {
-      add({ from: null, to: null, kind: 'draw', priority: 10 });
-    } else if (state.waste.length > 0) {
-      add({ from: null, to: null, kind: 'recycle', priority: 10 });
+function countEmptyTableauColumns(state) {
+  return state.tableau.reduce((count, pile) => count + (pile.length === 0 ? 1 : 0), 0);
+}
+
+/**
+ * Suggested moves, strongest first.
+ *
+ * The hint engine avoids the old "shuffle back and forth" behaviour by only
+ * recommending a tableau rearrangement when it unlocks a visible follow-up
+ * (a foundation move, a new reveal or a usable waste card) or, as a last
+ * resort, when there is no stock or waste left and it creates an empty column.
+ * It never peeks at face-down card values.
+ */
+export function getHints(state) {
+  const directMoves = getDirectProgressMoves(state);
+  const beforeProgress = new Set(directMoves.map(hintMoveKey));
+  const beforeEmptyColumns = countEmptyTableauColumns(state);
+  const qualityMoves = [...directMoves];
+  const emptyColumnMoves = [];
+  const directByKey = new Map(directMoves.map((move) => [hintMoveKey(move), move]));
+
+  for (const move of getTableauMoves(state)) {
+    const key = hintMoveKey(move);
+    if (directByKey.has(key)) continue;
+    const result = applyMove(state, move);
+    if (!result.ok) continue;
+
+    const afterDirect = getDirectProgressMoves(result.state);
+    const hasNewOpportunity = afterDirect.some((next) => !beforeProgress.has(hintMoveKey(next)));
+    const afterEmptyColumns = countEmptyTableauColumns(result.state);
+
+    if (hasNewOpportunity) {
+      qualityMoves.push({
+        ...move,
+        kind: 'setup',
+        priority: 500,
+      });
+    } else if (afterEmptyColumns > beforeEmptyColumns) {
+      emptyColumnMoves.push({
+        ...move,
+        kind: 'shuffle',
+        priority: 300,
+      });
     }
   }
 
-  return hints.sort((a, b) => b.priority - a.priority);
+  if (qualityMoves.length > 0) {
+    return qualityMoves.sort((a, b) => b.priority - a.priority);
+  }
+
+  // With hidden cards still reachable, drawing is more useful than moving
+  // cards around with no visible gain.
+  if (state.stock.length > 0) {
+    return [{ from: null, to: null, cardId: null, kind: 'draw', priority: 100 }];
+  }
+  if (state.waste.length > 0) {
+    return [{ from: null, to: null, cardId: null, kind: 'recycle', priority: 90 }];
+  }
+  if (emptyColumnMoves.length > 0) {
+    return emptyColumnMoves.sort((a, b) => b.priority - a.priority).slice(0, 1);
+  }
+  return [];
 }
 
 /**

@@ -1,11 +1,11 @@
-const CACHE_NAME = 'maison-pique-v2';
+const CACHE_NAME = 'maison-pique-v3';
 const APP_SHELL = [
   './',
   './index.html',
-  './styles.css',
-  './manifest.webmanifest',
-  './js/app.js',
-  './js/engine.js',
+  './styles.css?v=1.1.0',
+  './manifest.webmanifest?v=1.1.0',
+  './js/app.js?v=1.1.0',
+  './js/engine.js?v=1.1.0',
   './assets/favicon.svg',
   './assets/icon-192.png',
   './assets/icon-512.png',
@@ -17,7 +17,8 @@ const APP_SHELL = [
   './fonts/jost-300.woff2',
   './fonts/jost-400.woff2',
   './fonts/jost-500.woff2',
-  './fonts/maison-serif-sc.woff2',
+  './fonts/maison-serif-sc.woff2?v=1.1.0',
+  './fonts/maison-serif-sc-extra.woff2?v=1.1.0',
 ];
 
 self.addEventListener('install', (event) => {
@@ -45,7 +46,7 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
 
   event.respondWith(
-    fetch(request)
+    fetch(request, request.mode === 'navigate' ? { cache: 'no-cache' } : undefined)
       .then((response) => {
         if (response && response.ok) {
           const copy = response.clone();

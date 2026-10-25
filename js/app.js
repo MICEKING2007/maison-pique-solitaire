@@ -10,6 +10,7 @@ import {
   getHints,
   getMovableRun,
   getSourceCards,
+  hiddenCardCount,
   isWon,
   newGame,
   parseCard,
@@ -20,7 +21,7 @@ import {
   topCard,
   validateState,
   FOUNDATION_SUITS,
-} from './engine.js';
+} from './engine.js?v=1.1.0';
 
 const SAVE_KEY = 'maison-pique.game.v1';
 const STATS_KEY = 'maison-pique.stats.v1';
@@ -196,7 +197,10 @@ let resetArmed = false;
 let resetRecordTimer = null;
 let saveFlashTimer = null;
 let resizeTimer = null;
+let layoutDeferred = false;
 let winRevealTimer = null;
+let autoFinishTimer = null;
+let dragZonesTimer = null;
 let confettiFrame = null;
 let confettiParticles = [];
 let confettiStartedAt = 0;
@@ -555,7 +559,25 @@ function updateMetrics() {
 function scheduleLayout() {
   window.clearTimeout(resizeTimer);
   resizeTimer = window.setTimeout(() => {
-    if (drag) cancelDrag(false);
+    resizeTimer = null;
+    // Mobile URL bars and on-screen chrome can fire visualViewport resize
+    // events mid-gesture. Never destroy a drag (or force a board re-render)
+    // for that; apply the new dimensions after the card has landed.
+    if (drag) {
+      layoutDeferred = true;
+      // The mobile URL bar can change the visual viewport mid-drag. Keep the
+      // cached drop zones aligned with the cards without cancelling the drag.
+      window.clearTimeout(dragZonesTimer);
+      dragZonesTimer = window.setTimeout(() => {
+        dragZonesTimer = null;
+        if (!drag?.active) return;
+        const { zones, tableauTop } = buildDropZones(drag.source);
+        drag.zones = zones;
+        drag.zonesTop = tableauTop;
+        renderDragFrame();
+      }, 50);
+      return;
+    }
     updateMetrics();
     if (state) render({ preserveFocus: true });
   }, 90);
@@ -785,6 +807,10 @@ function renderWaste() {
       });
     })
     .join('');
+  els.waste.insertAdjacentHTML(
+    'beforeend',
+    `<span class="waste-badge" aria-hidden="true"><small>弃牌</small><b>${state.waste.length}</b></span>`,
+  );
   const top = topCard(state.waste);
   els.waste.setAttribute('aria-label', `弃牌堆，${state.waste.length} 张，顶牌为 ${cardLabel(top)}`);
 }
@@ -793,7 +819,7 @@ function renderFoundations() {
   const locked = isLocked();
   els.foundations.forEach((slot, index) => {
     const pile = state.foundations[index];
-    $$('.card', slot).forEach((node) => node.remove());
+    $$('.card, .foundation__count', slot).forEach((node) => node.remove());
     slot.classList.toggle('has-card', pile.length > 0);
     const cardId = topCard(pile);
     if (cardId) {
@@ -806,6 +832,12 @@ function renderFoundations() {
           zIndex: 2,
         }),
       );
+      const topRank = parseCard(cardId).rank;
+      const range = topRank === 1 ? 'A' : `A–${RANK_LABELS[topRank]}`;
+      slot.insertAdjacentHTML(
+        'beforeend',
+        `<span class="foundation__count" aria-hidden="true">${range}</span>`,
+      );
     }
     slot.tabIndex = pile.length === 0 ? 0 : -1;
     slot.setAttribute('role', pile.length === 0 ? 'button' : 'group');
@@ -813,7 +845,9 @@ function renderFoundations() {
     slot.setAttribute(
       'aria-label',
       cardId
-        ? `${FOUNDATION_NAMES[suit]}基础牌堆，${pile.length} 张，顶牌 ${cardLabel(cardId)}`
+        ? pile.length === 1
+          ? `${FOUNDATION_NAMES[suit]}基础牌堆，已收入 A，共 1 张`
+          : `${FOUNDATION_NAMES[suit]}基础牌堆，已收入 A 到 ${RANK_LABELS[parseCard(cardId).rank]}，共 ${pile.length} 张`
         : `${FOUNDATION_NAMES[suit]}基础牌堆，空，可放置 ${FOUNDATION_NAMES[suit]} A`,
     );
   });
@@ -1108,6 +1142,7 @@ function pushHistory() {
 }
 
 function beginNewGame({ drawMode = settings.drawMode, countPlayed = true } = {}) {
+  clearAutoFinishTimer();
   const mode = [1, 3].includes(Number(drawMode)) ? Number(drawMode) : 1;
   resetTimer();
   window.clearTimeout(winRevealTimer);
@@ -1141,9 +1176,11 @@ function beginNewGame({ drawMode = settings.drawMode, countPlayed = true } = {})
 
 function selectSource(source) {
   if (isLocked()) return;
+  clearAutoFinishTimer();
   const cards = getSourceCards(state, source);
   if (cards.length === 0) return;
-  clearHint();
+  // Keep the suggested destination glowing while the player follows a hint.
+  if (!hint?.from || !sameSource(hint.from, source)) clearHint();
   selection = source;
   hintCursor = 0;
   syncSelectionUI();
@@ -1186,6 +1223,7 @@ function foundationTargetForSource(source) {
 }
 
 function executeMove(from, to, { animateFrom = null, fromDrag = false } = {}) {
+  clearAutoFinishTimer();
   if (isLocked() || !from || !to) return false;
   const cards = getSourceCards(state, from);
   if (cards.length === 0) return false;
@@ -1228,6 +1266,7 @@ function executeMove(from, to, { animateFrom = null, fromDrag = false } = {}) {
 
 function drawStock() {
   if (isLocked()) return;
+  clearAutoFinishTimer();
   if (state.stock.length === 0 && state.waste.length === 0) {
     soundEngine.play('invalid');
     setStatus('牌堆已经空了 · 可以撤销一步，或开一局新的');
@@ -1330,7 +1369,8 @@ function handleCardTap(cardEl) {
     }
   }
 
-  clearHint();
+  const isHintSource = Boolean(hint?.from && sameSource(hint.from, source));
+  if (!isHintSource) clearHint();
 
   if (selection) {
     const destinations = getValidDestinations();
@@ -1374,6 +1414,12 @@ function setHintStatus(currentHint) {
     case 'reveal':
       setStatus(`提示 · 挪开 ${label}，就能翻出一张暗牌`, true);
       break;
+    case 'setup':
+      setStatus(`提示 · 先移动 ${label}，为下一步打开局面`, true);
+      break;
+    case 'shuffle':
+      setStatus(`提示 · 把 ${label} 移开，腾出一个空牌列`, true);
+      break;
     case 'draw':
       setStatus('提示 · 点击左上角牌堆继续发牌', true);
       break;
@@ -1395,11 +1441,12 @@ function setHintStatus(currentHint) {
 
 function showHint() {
   if (isLocked()) return;
+  clearAutoFinishTimer();
   if (selection) clearSelection({ silent: true });
   const hints = getHints(state);
   if (hints.length === 0) {
     clearHint();
-    setStatus('暂时没有可行的移动 · 可以撤销一步，或开一局新的');
+    setStatus('暂时没有更进一步的走法 · 可以撤销一步，或开一局新的');
     soundEngine.play('invalid');
     shakeElement(els.stock);
     return;
@@ -1407,6 +1454,14 @@ function showHint() {
   const chosen = hints[hintCursor % hints.length];
   hintCursor = (hintCursor + 1) % hints.length;
   hint = chosen;
+
+  // Make the suggested move immediately actionable. Selecting a whole run by
+  // tapping one of its often-thin exposed strips is the least reliable part of
+  // an otherwise simple hint; let the hint button do it for the player.
+  if (chosen.from) {
+    selection = chosen.from;
+    syncSelectionUI();
+  }
   applyHintUI(chosen);
   setHintStatus(chosen);
   soundEngine.play('hint');
@@ -1415,6 +1470,7 @@ function showHint() {
 
 function undo() {
   if (isLocked() || history.length === 0) return;
+  clearAutoFinishTimer();
   const previous = history.pop();
   state = previous;
   selection = null;
@@ -1431,7 +1487,24 @@ function undo() {
   refreshAutoFinish();
 }
 
-function refreshAutoFinish() {
+function clearAutoFinishTimer() {
+  window.clearTimeout(autoFinishTimer);
+  autoFinishTimer = null;
+}
+
+function autoFinishReady() {
+  return Boolean(
+    state &&
+      autoPlan &&
+      autoPlan.length > 0 &&
+      !isLocked() &&
+      state.stock.length === 0 &&
+      hiddenCardCount(state) === 0,
+  );
+}
+
+function refreshAutoFinish({ auto = true } = {}) {
+  clearAutoFinishTimer();
   if (!state || isLocked()) {
     els.autoFinish.hidden = true;
     autoPlan = null;
@@ -1440,11 +1513,22 @@ function refreshAutoFinish() {
   const plan = getAutoFinishPlan(state);
   autoPlan = plan && plan.length > 0 ? plan : null;
   els.autoFinish.hidden = !autoPlan;
+
+  if (auto && autoFinishReady()) {
+    setStatus('牌面已全部翻开 · 稍候自动收牌', true);
+    autoFinishTimer = window.setTimeout(() => {
+      autoFinishTimer = null;
+      if (!autoFinishReady() || drag || document.hidden) return;
+      if (document.querySelector('dialog[open]')) return;
+      runAutoFinish({ automatic: true });
+    }, 900);
+  }
 }
 
-async function runAutoFinish() {
+async function runAutoFinish({ automatic = false } = {}) {
   if (!autoPlan || isLocked() || autoPlan.length === 0) return;
   const plan = autoPlan;
+  clearAutoFinishTimer();
   pushHistory();
   clearHint();
   selection = null;
@@ -1453,7 +1537,8 @@ async function runAutoFinish() {
   els.autoFinish.hidden = true;
   updateControls();
   ensureTimer();
-  setStatus('正在把余牌收入牌盒 · 稍候片刻', true);
+  els.app.classList.add('is-auto-collecting');
+  setStatus(automatic ? '牌面已全部翻开 · 正在自动收牌' : '正在把余牌收入牌盒 · 稍候片刻', true);
   soundEngine.play('foundation');
   const delay = Math.max(55, Math.min(150, 4800 / plan.length));
 
@@ -1471,11 +1556,12 @@ async function runAutoFinish() {
   }
 
   isAutoPlaying = false;
+  els.app.classList.remove('is-auto-collecting');
   updateControls();
   saveGame();
   if (checkForWin()) return;
   render();
-  refreshAutoFinish();
+  refreshAutoFinish({ auto: false });
   setStatus('自动收牌停下了 · 再找一找其他落点');
 }
 
@@ -1508,6 +1594,8 @@ function checkForWin() {
   if (!stats.bestMoves || state.moves < stats.bestMoves) stats.bestMoves = state.moves;
 
   gameWon = true;
+  clearAutoFinishTimer();
+  els.app.classList.remove('is-auto-collecting');
   autoPlan = null;
   els.autoFinish.hidden = true;
   render();
@@ -1605,6 +1693,7 @@ function closeAllDialogs() {
 
 function openNewGameDialog() {
   if (isAutoPlaying) return;
+  clearAutoFinishTimer();
   const current = state?.drawMode || settings.drawMode;
   const input = els.newForm.querySelector(`input[name="draw-mode"][value="${current}"]`);
   if (input) input.checked = true;
@@ -1613,6 +1702,7 @@ function openNewGameDialog() {
 
 function openMenu() {
   if (isAutoPlaying) return;
+  clearAutoFinishTimer();
   updateMenuStats();
   els.menuDialog.showModal();
 }
@@ -1632,6 +1722,154 @@ function readSourceFromCard(cardEl) {
     pile: cardEl.dataset.srcPile === undefined ? null : Number(cardEl.dataset.srcPile),
     index: cardEl.dataset.srcIndex === undefined ? null : Number(cardEl.dataset.srcIndex),
   };
+}
+
+function dragSnapTolerance() {
+  return Math.min(28, Math.max(14, metrics.cardW * 0.22));
+}
+
+function buildDropZones(source) {
+  const destinations = getValidDestinations(source);
+  const zones = [];
+  const snapPad = Math.max(14, Math.min(30, metrics.cardW * 0.22));
+  const foundationPad = snapPad;
+
+  destinations.foundations.forEach((pile) => {
+    const element = els.foundations[pile];
+    if (!element) return;
+    const rect = element.getBoundingClientRect();
+    zones.push({
+      type: 'foundation',
+      pile,
+      element,
+      left: rect.left - foundationPad,
+      right: rect.right + foundationPad,
+      top: rect.top - foundationPad,
+      bottom: rect.bottom + foundationPad,
+      centerX: rect.left + rect.width / 2,
+      centerY: rect.top + rect.height / 2,
+      targetLeft: rect.left,
+    });
+  });
+
+  const tableRect = els.tableau.getBoundingClientRect();
+  const tableauPad = snapPad;
+  const topLimit = tableRect.top - Math.max(6, metrics.gap);
+  const bottomLimit = tableRect.bottom + Math.max(10, metrics.cardH * 0.2);
+  destinations.tableau.forEach((pile) => {
+    const element = esColumn(pile);
+    if (!element) return;
+    const rect = element.getBoundingClientRect();
+    zones.push({
+      type: 'tableau',
+      pile,
+      element,
+      left: rect.left - tableauPad,
+      right: rect.right + tableauPad,
+      top: topLimit,
+      bottom: bottomLimit,
+      centerX: rect.left + rect.width / 2,
+      targetLeft: rect.left,
+    });
+  });
+
+  return { zones, destinations, tableauTop: tableRect.top };
+}
+
+function nearestZone(zones, x, y) {
+  let best = null;
+  let bestDistance = Infinity;
+  for (const zone of zones) {
+    const distance =
+      zone.type === 'foundation'
+        ? Math.hypot(zone.centerX - x, zone.centerY - y)
+        : Math.abs(zone.centerX - x);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = zone;
+    }
+  }
+  return best;
+}
+
+function findDropZone(x, y) {
+  if (!drag?.zones?.length) return null;
+  const hits = [];
+  for (const zone of drag.zones) {
+    if (x < zone.left || x > zone.right || y < zone.top || y > zone.bottom) continue;
+    hits.push(zone);
+  }
+  if (hits.length === 0) return null;
+
+  const foundations = hits.filter((zone) => zone.type === 'foundation');
+  const tableaus = hits.filter((zone) => zone.type === 'tableau');
+
+  // The top row and tableau are separated by a small gap. Prefer a foundation
+  // above the board edge and a tableau target below it.
+  if (foundations.length > 0 && (tableaus.length === 0 || y < drag.zonesTop)) {
+    return nearestZone(foundations, x, y);
+  }
+  if (tableaus.length > 0) return nearestZone(tableaus, x, y);
+  return nearestZone(foundations, x, y);
+}
+
+function distanceToZone(zone, x, y) {
+  const dx = x < zone.left ? zone.left - x : x > zone.right ? x - zone.right : 0;
+  const dy = y < zone.top ? zone.top - y : y > zone.bottom ? y - zone.bottom : 0;
+  return Math.hypot(dx, dy);
+}
+
+function zoneTopCard(zone) {
+  if (!zone) return null;
+  if (zone.type === 'foundation') {
+    return els.foundations[zone.pile].querySelector('.card') || null;
+  }
+  const column = esColumn(zone.pile);
+  return column ? column.querySelector('.card:last-child') : null;
+}
+
+function setDragZone(zone) {
+  if (!drag || drag.hoverZone === zone) return;
+  if (drag.hoverEl) {
+    drag.hoverEl.classList.remove('is-drag-over');
+    drag.hoverCard?.classList.remove('is-drag-hover');
+  }
+  drag.hoverEl = null;
+  drag.hoverCard = null;
+  drag.hoverZone = null;
+  if (!zone) {
+    drag.ghost?.classList.remove('is-snapped');
+    return;
+  }
+  drag.hoverZone = zone;
+  drag.lastValidZone = zone;
+  drag.hoverEl = zone.element;
+  drag.hoverCard = zoneTopCard(zone);
+  zone.element.classList.add('is-drag-over');
+  drag.hoverCard?.classList.add('is-drag-hover');
+  drag.ghost?.classList.add('is-snapped');
+}
+
+function scheduleDragFrame() {
+  if (!drag?.active || drag.rafId) return;
+  drag.rafId = requestAnimationFrame(() => {
+    if (!drag?.active) return;
+    drag.rafId = null;
+    renderDragFrame();
+  });
+}
+
+function renderDragFrame() {
+  if (!drag?.active || !drag.ghost) return;
+  const zone = findDropZone(drag.currentX, drag.currentY);
+  // Magnetise the card horizontally over a valid column/ foundation. The
+  // player still controls the vertical position, but the card visibly clicks
+  // into the column before release.
+  const left = zone ? zone.targetLeft : drag.currentX - drag.grabX;
+  const top = drag.currentY - drag.grabY;
+  const rotation = zone ? 0 : 0.7;
+  drag.ghost.style.transform = `translate3d(${left}px, ${top}px, 0) rotate(${rotation}deg)`;
+  setDragZone(zone);
 }
 
 function beginDrag(event, cardEl) {
@@ -1671,10 +1909,12 @@ function beginDrag(event, cardEl) {
     ghost.append(badge);
   }
   els.dragLayer.append(ghost);
-  $$(`.card[data-card-id]`, els.board)
-    .filter((el) => cards.includes(el.dataset.cardId))
-    .forEach((el) => el.classList.add('is-dragging-source'));
+  const sourceElements = cards
+    .map((id) => document.querySelector(`.card[data-card-id="${id}"]`))
+    .filter(Boolean);
+  sourceElements.forEach((el) => el.classList.add('is-dragging-source'));
 
+  const { zones, tableauTop } = buildDropZones(source);
   drag = {
     pointerId: event.pointerId,
     source,
@@ -1687,59 +1927,42 @@ function beginDrag(event, cardEl) {
     currentX: event.clientX,
     currentY: event.clientY,
     startRect: rect,
-    hoverTarget: null,
+    zones,
+    zonesTop: tableauTop,
+    hoverZone: null,
     hoverEl: null,
+    hoverCard: null,
+    lastValidZone: null,
+    rafId: null,
     active: true,
   };
   document.body.classList.add('is-dragging');
-  updateGhostPosition(event.clientX, event.clientY);
-  updateHoverTarget(event.clientX, event.clientY);
+  renderDragFrame();
   soundEngine.play('pick');
   haptic(5);
 }
 
-function updateGhostPosition(x, y) {
-  if (!drag) return;
-  drag.currentX = x;
-  drag.currentY = y;
-  const left = x - drag.grabX;
-  const top = y - drag.grabY;
-  drag.ghost.style.transform = `translate3d(${left}px, ${top}px, 0) rotate(0.7deg)`;
-}
-
-function updateHoverTarget(x, y) {
-  if (!drag) return;
-  const element = document.elementFromPoint(x, y);
-  const container = element?.closest('[data-drop]');
-  if (drag.hoverEl && drag.hoverEl !== container) {
-    drag.hoverEl.classList.remove('is-drag-over');
-  }
-  drag.hoverEl = null;
-  drag.hoverTarget = null;
-  if (!container) return;
-  const type = container.dataset.drop;
-  const pile = type === 'foundation' ? Number(container.dataset.foundation) : Number(container.dataset.tableau);
-  const destinations = getValidDestinations(drag.source);
-  const valid = type === 'foundation' ? destinations.foundations.includes(pile) : destinations.tableau.includes(pile);
-  if (!valid) return;
-  drag.hoverTarget = { type, pile };
-  drag.hoverEl = container;
-  container.classList.add('is-drag-over');
-}
-
 function cleanupDrag({ restoreSelection = true } = {}) {
+  if (drag?.rafId) cancelAnimationFrame(drag.rafId);
+  window.clearTimeout(dragZonesTimer);
+  dragZonesTimer = null;
+  if (drag) setDragZone(null);
   if (drag?.ghost) drag.ghost.remove();
-  if (drag?.hoverEl) drag.hoverEl.classList.remove('is-drag-over');
   $$('.is-dragging-source').forEach((el) => el.classList.remove('is-dragging-source'));
   document.body.classList.remove('is-dragging');
   drag = null;
   if (!restoreSelection) selection = null;
   syncSelectionUI();
+  if (layoutDeferred) {
+    layoutDeferred = false;
+    scheduleLayout();
+  }
 }
 
-function finishDrag() {
+function finishDrag(zone = null) {
   if (!drag) return;
-  const { source, ghost, cards, hoverTarget } = drag;
+  const { source, ghost } = drag;
+  const targetZone = zone || drag.hoverZone;
   const ghostRects = new Map();
   if (ghost) {
     $$('.card[data-card-id]', ghost).forEach((el) => {
@@ -1748,15 +1971,19 @@ function finishDrag() {
   }
   suppressClicksUntil = performance.now() + 260;
 
-  if (hoverTarget) {
+  if (targetZone) {
     cleanupDrag({ restoreSelection: false });
-    executeMove(source, hoverTarget, { animateFrom: ghostRects, fromDrag: true });
+    executeMove(
+      source,
+      { type: targetZone.type, pile: targetZone.pile },
+      { animateFrom: ghostRects, fromDrag: true },
+    );
     return;
   }
 
   cleanupDrag({ restoreSelection: true });
   soundEngine.play('pick');
-  setStatus('没有落在这里 · 再试一个发光的落点');
+  setStatus('没有落在这里 · 靠近发光牌列即可自动吸附');
   haptic(5);
 }
 
@@ -1768,7 +1995,9 @@ function cancelDrag(announce = true) {
 }
 
 function onPointerDown(event) {
-  if (drag || isLocked() || event.button !== 0) return;
+  if (drag || isLocked()) return;
+  clearAutoFinishTimer();
+  if (event.pointerType === 'mouse' && event.button !== 0) return;
   const activeDialog = document.querySelector('dialog[open]');
   if (activeDialog) return;
   const cardEl = event.target.closest?.('.card.is-interactive');
@@ -1789,8 +2018,6 @@ function onPointerDown(event) {
     grabX: 0,
     grabY: 0,
     startRect: null,
-    hoverTarget: null,
-    hoverEl: null,
     pending: true,
     active: false,
   };
@@ -1826,17 +2053,37 @@ function onPointerMove(event) {
   }
   if (!drag.active) return;
   event.preventDefault();
-  updateGhostPosition(event.clientX, event.clientY);
-  updateHoverTarget(event.clientX, event.clientY);
+  drag.currentX = event.clientX;
+  drag.currentY = event.clientY;
+  scheduleDragFrame();
 }
 
 function onPointerUp(event) {
   if (!drag || event.pointerId !== drag.pointerId) return;
-  if (drag.active) {
-    finishDrag();
-  } else {
+  if (!drag.active) {
     drag = null;
+    return;
   }
+  if (drag.rafId) {
+    cancelAnimationFrame(drag.rafId);
+    drag.rafId = null;
+  }
+  const hasEventCoords = Number.isFinite(event.clientX) && Number.isFinite(event.clientY);
+  const isBlankCoordinate = event.clientX === 0 && event.clientY === 0 && (drag.currentX !== 0 || drag.currentY !== 0);
+  if (hasEventCoords && !isBlankCoordinate) {
+    drag.currentX = event.clientX;
+    drag.currentY = event.clientY;
+  }
+  renderDragFrame();
+
+  let zone = drag.hoverZone;
+  if (!zone && drag.lastValidZone) {
+    const tolerance = dragSnapTolerance();
+    if (distanceToZone(drag.lastValidZone, drag.currentX, drag.currentY) <= tolerance) {
+      zone = drag.lastValidZone;
+    }
+  }
+  finishDrag(zone);
 }
 
 function onPointerCancel(event) {
@@ -1979,6 +2226,7 @@ function setupEventListeners() {
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
+      clearAutoFinishTimer();
       if (drag) cancelDrag(false);
       pauseTimer();
       saveGame({ quiet: true });
