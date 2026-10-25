@@ -85,7 +85,7 @@ python3 -m http.server 8123
 
 ## 开发与测试
 
-当前版本：**v1.5.0**。纯 HTML / CSS / ES Modules，无需构建。
+当前版本：**v1.5.1**。纯 HTML / CSS / ES Modules，无需构建。
 
 ```bash
 node --test tests/*.test.js
@@ -97,7 +97,7 @@ node --test tests/*.test.js
 
 GitHub Pages 直接从 `main` 分支根目录发布，无需构建步骤。页面、字体和 PWA 缓存全部使用相对路径。
 
-发布新版本时，同时更新 `index.html` 与 `js/app.js` 里的 `?v=` 查询串、`sw.js` 的 `CACHE_NAME` 和预缓存地址，确保用户不会停留在旧缓存。当前界面版本号显示在菜单底部（`v1.5.0`）。
+发布新版本时，同时更新 `index.html` 与 `js/app.js` 里的 `?v=` 查询串、`sw.js` 的 `CACHE_NAME` 和预缓存地址，确保用户不会停留在旧缓存。当前界面版本号显示在菜单底部（`v1.5.1`）。
 
 ## 目录
 

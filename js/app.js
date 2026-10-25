@@ -23,7 +23,7 @@ import {
   topCard,
   validateState,
   FOUNDATION_SUITS,
-} from './engine.js?v=1.5.0';
+} from './engine.js?v=1.5.1';
 
 const SAVE_KEY = 'maison-pique.game.v1';
 const STATS_KEY = 'maison-pique.stats.v1';
@@ -296,7 +296,7 @@ function flashSaveIndicator() {
    Sound and haptics
    -------------------------------------------------------------------------- */
 
-const AUDIO_VERSION = '1.5.0';
+const AUDIO_VERSION = '1.5.1';
 const HAKIMI_TRACKS = [1, 2, 3, 4, 5].map(
   (index) => `audio/hakimi/phrase-0${index}.mp3?v=${AUDIO_VERSION}`,
 );
@@ -1868,8 +1868,8 @@ function applySkin(skin, { announce = false } = {}) {
     manifestLink.setAttribute(
       'href',
       next === 'lumen'
-        ? 'manifest-lumen.webmanifest?v=1.5.0'
-        : 'manifest.webmanifest?v=1.5.0',
+        ? 'manifest-lumen.webmanifest?v=1.5.1'
+        : 'manifest.webmanifest?v=1.5.1',
     );
   }
 
