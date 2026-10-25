@@ -1,28 +1,45 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-skin="salon">
   <head>
     <meta charset="utf-8" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
-    <meta name="theme-color" content="#071b14" />
+    <meta name="theme-color" content="#071b14" id="theme-color" />
     <meta
       name="description"
       content="Maison Pique 纸牌沙龙：一款为手机、平板和电脑精心打造的经典克朗代克纸牌接龙。"
     />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="apple-status-style" />
     <meta name="apple-mobile-web-app-title" content="纸牌沙龙" />
+    <script>
+      (() => {
+        try {
+          const stored = JSON.parse(localStorage.getItem('maison-pique.settings.v1') || 'null');
+          if (stored && stored.skin === 'lumen') {
+            document.documentElement.dataset.skin = 'lumen';
+            const theme = document.querySelector('meta[name="theme-color"]');
+            if (theme) theme.content = '#f5f5f7';
+            const status = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+            if (status) status.content = 'default';
+          }
+        } catch {
+          // Keep the salon skin when storage is unavailable.
+        }
+      })();
+    </script>
     <title>Maison Pique · 纸牌沙龙</title>
 
-    <link rel="manifest" href="manifest.webmanifest?v=1.1.1" />
+    <link rel="manifest" href="manifest.webmanifest?v=1.2.0" id="manifest-link" />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
     <link rel="preload" href="fonts/cormorant-garamond-500.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="fonts/jost-400.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="stylesheet" href="styles.css?v=1.1.1" />
-    <script type="module" src="js/app.js?v=1.1.1"></script>
+    <link rel="stylesheet" href="styles.css?v=1.2.0" />
+    <link rel="stylesheet" href="lumen.css?v=1.2.0" />
+    <script type="module" src="js/app.js?v=1.2.0"></script>
   </head>
 
   <body>
@@ -113,7 +130,8 @@
             </span>
           </span>
           <div class="brand__copy">
-            <span class="brand__eyebrow">MAISON DE CARTES · PARIS 1925</span>
+            <span class="brand__eyebrow brand__eyebrow--salon">MAISON DE CARTES · PARIS 1925</span>
+            <span class="brand__eyebrow brand__eyebrow--lumen">LUMEN · A STUDY IN LIGHT</span>
             <h1 class="brand__title">Maison <i>Pique</i></h1>
             <span class="brand__zh">纸牌沙龙 <b>·</b> 经典接龙</span>
           </div>
@@ -279,6 +297,42 @@
         <p class="modal__eyebrow">LE SALON</p>
         <h2 class="modal__title" id="menu-dialog-title">牌室设置</h2>
 
+        <fieldset class="skin-picker">
+          <legend class="skin-picker__legend">桌面皮肤 <span>APPEARANCE</span></legend>
+          <div class="skin-picker__grid">
+            <label class="skin-choice">
+              <input type="radio" name="skin" value="salon" checked />
+              <span class="skin-choice__preview skin-choice__preview--salon" aria-hidden="true">
+                <i class="skin-choice__mini-card"></i>
+                <i class="skin-choice__mini-card skin-choice__mini-card--back"></i>
+                <i class="skin-choice__mini-dot"></i>
+              </span>
+              <span class="skin-choice__copy">
+                <b>翡翠沙龙</b>
+                <small>Art Deco · 经典</small>
+              </span>
+              <span class="skin-choice__check" aria-hidden="true">
+                <svg><use href="#icon-check"></use></svg>
+              </span>
+            </label>
+            <label class="skin-choice">
+              <input type="radio" name="skin" value="lumen" />
+              <span class="skin-choice__preview skin-choice__preview--lumen" aria-hidden="true">
+                <i class="skin-choice__mini-card"></i>
+                <i class="skin-choice__mini-card skin-choice__mini-card--back"></i>
+                <i class="skin-choice__mini-dot"></i>
+              </span>
+              <span class="skin-choice__copy">
+                <b>流光</b>
+                <small>Lumen · 光感</small>
+              </span>
+              <span class="skin-choice__check" aria-hidden="true">
+                <svg><use href="#icon-check"></use></svg>
+              </span>
+            </label>
+          </div>
+        </fieldset>
+
         <div class="menu-list">
           <div class="menu-row">
             <span class="menu-row__icon"><svg><use href="#icon-volume"></use></svg></span>
@@ -318,7 +372,7 @@
         </div>
 
         <div class="menu-footnote">
-          <span>第 <b id="game-seed">—</b> 号牌局 · <span class="app-version">v1.1.1</span></span>
+          <span>第 <b id="game-seed">—</b> 号牌局 · <span class="app-version">v1.2.0</span></span>
           <button class="link-btn" id="reset-record-btn" type="button">清除记录</button>
         </div>
       </div>

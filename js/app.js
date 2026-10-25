@@ -21,7 +21,7 @@ import {
   topCard,
   validateState,
   FOUNDATION_SUITS,
-} from './engine.js?v=1.1.1';
+} from './engine.js?v=1.2.0';
 
 const SAVE_KEY = 'maison-pique.game.v1';
 const STATS_KEY = 'maison-pique.stats.v1';
@@ -163,6 +163,7 @@ const els = {
 const settings = {
   sound: true,
   drawMode: 1,
+  skin: 'salon',
 };
 
 const defaultStats = () => ({
@@ -426,6 +427,7 @@ function loadSettings() {
   if (!stored || typeof stored !== 'object') return;
   settings.sound = stored.sound !== false;
   settings.drawMode = [1, 3].includes(Number(stored.drawMode)) ? Number(stored.drawMode) : 1;
+  settings.skin = stored.skin === 'lumen' ? 'lumen' : 'salon';
 }
 
 function saveSettings() {
@@ -1641,7 +1643,10 @@ function startConfetti() {
   canvas.style.height = `${window.innerHeight}px`;
   const ctx = canvas.getContext('2d');
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const colors = ['#d5b77b', '#f1e5c9', '#a33d2e', '#7d9b80', '#e8d198'];
+  const colors =
+    settings.skin === 'lumen'
+      ? ['#6f8cff', '#c3a6ff', '#ffc2ad', '#9fe8d8', '#ffffff', '#1d1d1f']
+      : ['#d5b77b', '#f1e5c9', '#a33d2e', '#7d9b80', '#e8d198'];
   confettiParticles = Array.from({ length: 110 }, (_, index) => ({
     x: Math.random() * window.innerWidth,
     y: -20 - Math.random() * window.innerHeight * 0.45,
@@ -1708,6 +1713,38 @@ function openMenu() {
   clearAutoFinishTimer();
   updateMenuStats();
   els.menuDialog.showModal();
+}
+
+function applySkin(skin, { announce = false } = {}) {
+  const next = skin === 'lumen' ? 'lumen' : 'salon';
+  settings.skin = next;
+  document.documentElement.dataset.skin = next;
+
+  const themeColor = document.querySelector('meta[name="theme-color"]');
+  if (themeColor) themeColor.setAttribute('content', next === 'lumen' ? '#f5f5f7' : '#071b14');
+  const statusStyle = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+  if (statusStyle) {
+    statusStyle.setAttribute('content', next === 'lumen' ? 'default' : 'black-translucent');
+  }
+  const manifestLink = document.getElementById('manifest-link');
+  if (manifestLink) {
+    manifestLink.setAttribute(
+      'href',
+      next === 'lumen'
+        ? 'manifest-lumen.webmanifest?v=1.2.0'
+        : 'manifest.webmanifest?v=1.2.0',
+    );
+  }
+
+  $$('input[name="skin"]').forEach((input) => {
+    input.checked = input.value === next;
+  });
+
+  if (announce) {
+    showToast(next === 'lumen' ? '已切换到「流光」皮肤' : '已切换到「翡翠沙龙」皮肤');
+    soundEngine.play('select');
+    haptic(5);
+  }
 }
 
 function updateSoundToggle() {
@@ -2249,6 +2286,14 @@ function setupEventListeners() {
 
   els.winDialog.addEventListener('close', stopConfetti);
 
+  $$('input[name="skin"]').forEach((input) => {
+    input.addEventListener('change', () => {
+      if (!input.checked) return;
+      applySkin(input.value, { announce: true });
+      saveSettings();
+    });
+  });
+
   els.soundToggle.addEventListener('click', () => {
     settings.sound = !settings.sound;
     updateSoundToggle();
@@ -2449,6 +2494,7 @@ function registerServiceWorker() {
 function boot() {
   loadSettings();
   stats = loadStats();
+  applySkin(settings.skin);
   updateSoundToggle();
 
   const saved = loadSavedGame();

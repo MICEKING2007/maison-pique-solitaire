@@ -1,0 +1,1680 @@
+/* ==========================================================================
+   LUMEN — a light, glass-and-light skin for Maison Pique
+   Scoped to html[data-skin="lumen"]; salon remains the default.
+   ========================================================================== */
+
+html[data-skin='lumen'] {
+  --lume-canvas: #f4f2ee;
+  --lume-surface: rgba(255, 255, 255, 0.72);
+  --lume-surface-solid: #fffdfb;
+  --lume-ink: #1d1d1f;
+  --lume-sub: #5f6068;
+  --lume-faint: #85858c;
+  --lume-hair: rgba(29, 29, 31, 0.1);
+  --lume-hair-strong: rgba(29, 29, 31, 0.18);
+  --lume-accent: #4e6cf2;
+  --lume-accent-deep: #3453d6;
+  --lume-accent-soft: rgba(78, 108, 242, 0.13);
+  --lume-violet: #8f7bf2;
+  --lume-peach: #ffb59e;
+  --lume-mint: #8edcca;
+  --lume-shadow: 0 16px 48px rgba(37, 45, 73, 0.09);
+  --lume-radius: clamp(7px, calc(var(--card-w) * 0.078), 12px);
+
+  /* Re-map the existing accent tokens so every interaction state follows the
+     new light theme without duplicating the whole interaction stylesheet. */
+  --gold: #556fee;
+  --gold-bright: #3e5de0;
+  --gold-deep: #6b5bda;
+  --ivory: #1d1d1f;
+  --ivory-dim: #343438;
+  --muted: var(--lume-sub);
+  --muted-deep: var(--lume-faint);
+  --line: var(--lume-hair);
+  --line-strong: var(--lume-hair-strong);
+  --line-faint: rgba(29, 29, 31, 0.055);
+  --card-ink: #242427;
+  --card-red: #d34f45;
+  --font-cn: 'Jost', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-display: 'Jost', 'PingFang SC', 'Hiragino Sans GB', sans-serif;
+  --font-ui: 'Jost', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+
+  color-scheme: light;
+  background: var(--lume-canvas);
+  -webkit-text-size-adjust: 100%;
+}
+
+html[data-skin='lumen'] body {
+  color: var(--lume-ink);
+  background:
+    radial-gradient(78% 58% at 9% -12%, rgba(156, 190, 255, 0.52), transparent 66%),
+    radial-gradient(58% 48% at 103% -3%, rgba(255, 194, 170, 0.46), transparent 67%),
+    radial-gradient(76% 58% at 50% 111%, rgba(144, 225, 207, 0.35), transparent 70%),
+    linear-gradient(180deg, #fcfbf8 0%, #f4f2ee 54%, #eeede9 100%);
+  font-weight: 400;
+  transition: background-color 450ms ease, color 300ms ease;
+}
+
+html[data-skin='lumen'] ::selection {
+  color: #fff;
+  background: var(--lume-accent);
+}
+
+html[data-skin='lumen'] button:focus-visible,
+html[data-skin='lumen'] [tabindex]:focus-visible {
+  outline: 2px solid var(--lume-accent);
+  outline-offset: 3px;
+}
+
+/* Ambient: pastel light blooms + a very fine paper grain. ------------------ */
+
+html[data-skin='lumen'] .ambient::before {
+  background:
+    radial-gradient(ellipse 48% 35% at 12% 2%, rgba(142, 179, 255, 0.23), transparent 72%),
+    radial-gradient(ellipse 42% 32% at 92% 14%, rgba(255, 185, 159, 0.19), transparent 72%),
+    radial-gradient(ellipse 55% 38% at 52% 104%, rgba(139, 222, 203, 0.2), transparent 72%);
+}
+
+html[data-skin='lumen'] .ambient::after {
+  opacity: 0.024;
+  mix-blend-mode: multiply;
+}
+
+html[data-skin='lumen'] .ambient__rays {
+  display: none;
+}
+
+html[data-skin='lumen'] .ambient__halo {
+  top: -44vh;
+  width: 108vh;
+  height: 108vh;
+  border: 0;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(125, 151, 255, 0.16) 0%,
+    rgba(207, 179, 255, 0.11) 34%,
+    rgba(255, 181, 158, 0.07) 55%,
+    transparent 70%
+  );
+  box-shadow: none;
+  opacity: 0.95;
+}
+
+html[data-skin='lumen'] .page-frame,
+html[data-skin='lumen'] .table-watermark,
+html[data-skin='lumen'] .salon::before {
+  display: none;
+}
+
+html[data-skin='lumen'] .app::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: min(540px, 52vw);
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(104, 137, 255, 0.55),
+    rgba(190, 164, 255, 0.62),
+    rgba(255, 185, 160, 0.52),
+    transparent
+  );
+  transform: translateX(-50%);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+/* Header and controls ------------------------------------------------------ */
+
+html[data-skin='lumen'] .topbar {
+  padding: 10px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.64);
+  box-shadow:
+    0 14px 38px rgba(32, 38, 62, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.94);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  backdrop-filter: blur(22px) saturate(150%);
+}
+
+html[data-skin='lumen'] .topbar::after {
+  display: none;
+}
+
+html[data-skin='lumen'] .brand {
+  gap: 12px;
+}
+
+html[data-skin='lumen'] .brand__seal {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  transform: none;
+  background: conic-gradient(
+    from 215deg,
+    rgba(111, 141, 255, 0.95),
+    rgba(206, 181, 255, 0.9) 26%,
+    rgba(255, 193, 171, 0.9) 50%,
+    rgba(154, 228, 209, 0.9) 72%,
+    rgba(111, 141, 255, 0.95)
+  );
+  box-shadow:
+    0 7px 20px rgba(70, 88, 190, 0.15),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.42);
+}
+
+html[data-skin='lumen'] .brand__seal::before,
+html[data-skin='lumen'] .brand__seal::after {
+  display: none;
+}
+
+html[data-skin='lumen'] .brand__seal-inner {
+  width: 30px;
+  height: 30px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: rgba(255, 253, 250, 0.92);
+  box-shadow:
+    inset 0 0 0 1px rgba(29, 29, 31, 0.04),
+    0 1px 3px rgba(20, 26, 58, 0.08);
+}
+
+html[data-skin='lumen'] .brand__seal-inner svg {
+  display: none;
+}
+
+html[data-skin='lumen'] .brand__seal-inner::before {
+  content: '✦';
+  color: var(--lume-accent-deep);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1;
+  text-shadow: 0 0 12px rgba(78, 108, 242, 0.26);
+}
+
+html[data-skin='lumen'] .brand__copy {
+  gap: 2px;
+}
+
+html[data-skin='lumen'] .brand__eyebrow {
+  color: var(--lume-faint);
+  font-size: 7.4px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+}
+
+html[data-skin='lumen'] .brand__eyebrow--salon {
+  display: none;
+}
+
+html[data-skin='lumen'] .brand__eyebrow--lumen {
+  display: block;
+  color: var(--lume-accent);
+}
+
+html[data-skin='lumen'] .brand__title {
+  color: var(--lume-ink);
+  font-family: var(--font-ui);
+  font-size: clamp(25px, 2.45vw, 31px);
+  font-weight: 300;
+  letter-spacing: -0.026em;
+  line-height: 1.02;
+}
+
+html[data-skin='lumen'] .brand__title i {
+  color: var(--lume-ink);
+  font-style: normal;
+  font-weight: 500;
+}
+
+html[data-skin='lumen'] .brand__title::after {
+  content: '';
+  display: inline-block;
+  width: 4.5px;
+  height: 4.5px;
+  margin-left: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6e8cff, #c29bff 55%, #ffb59e);
+  box-shadow: 0 0 9px rgba(112, 139, 255, 0.48);
+  vertical-align: 0.18em;
+}
+
+html[data-skin='lumen'] .brand__zh {
+  color: var(--lume-sub);
+  font-family: var(--font-cn);
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+}
+
+html[data-skin='lumen'] .brand__zh b {
+  color: var(--lume-accent);
+}
+
+html[data-skin='lumen'] .stats {
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  gap: clamp(14px, 1.8vw, 23px);
+}
+
+html[data-skin='lumen'] .stat {
+  min-width: 40px;
+  gap: 0;
+}
+
+html[data-skin='lumen'] .stat__label {
+  color: var(--lume-faint);
+  font-size: 7.5px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+}
+
+html[data-skin='lumen'] .stat__value {
+  color: var(--lume-ink);
+  font-family: var(--font-ui);
+  font-size: 21px;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+}
+
+html[data-skin='lumen'] .stats__rule {
+  width: 1px;
+  height: 17px;
+  background: var(--lume-hair);
+}
+
+html[data-skin='lumen'] .stats__rule i {
+  display: none;
+}
+
+html[data-skin='lumen'] .toolbar {
+  gap: 7px;
+}
+
+html[data-skin='lumen'] .tool-btn,
+html[data-skin='lumen'] .tool-btn--icon {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid rgba(29, 29, 31, 0.075);
+  border-radius: 12px;
+  color: #3c3c40;
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow:
+    0 1px 2px rgba(24, 28, 48, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+html[data-skin='lumen'] .tool-btn__label {
+  display: none;
+}
+
+html[data-skin='lumen'] .tool-btn svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 1.55;
+}
+
+html[data-skin='lumen'] .tool-btn:hover:not(:disabled) {
+  color: var(--lume-ink);
+  border-color: rgba(29, 29, 31, 0.13);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 5px 16px rgba(28, 34, 62, 0.08),
+    inset 0 1px 0 #fff;
+}
+
+html[data-skin='lumen'] .tool-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+html[data-skin='lumen'] .tool-btn:disabled {
+  opacity: 0.32;
+}
+
+html[data-skin='lumen'] .new-game-btn {
+  height: 38px;
+  padding: 0 16px;
+  gap: 6px;
+  border: 1px solid #1d1d1f;
+  border-radius: 12px;
+  color: #fff;
+  background: #1d1d1f;
+  box-shadow:
+    0 5px 18px rgba(22, 24, 32, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+}
+
+html[data-skin='lumen'] .new-game-btn::after {
+  display: none;
+}
+
+html[data-skin='lumen'] .new-game-btn:hover {
+  background: #313136;
+  filter: none;
+}
+
+html[data-skin='lumen'] .new-game-btn:active {
+  transform: scale(0.97);
+}
+
+/* Board and empty piles ---------------------------------------------------- */
+
+html[data-skin='lumen'] .salon {
+  padding-top: clamp(13px, 2.2vh, 23px);
+}
+
+html[data-skin='lumen'] .house-crest {
+  justify-content: center;
+  opacity: 0.85;
+}
+
+html[data-skin='lumen'] .house-crest__line {
+  display: none;
+}
+
+html[data-skin='lumen'] .house-crest__diamond {
+  width: 7px;
+  height: 7px;
+  border: 0;
+  border-radius: 50%;
+  transform: none;
+  background: linear-gradient(135deg, #7b97ff, #c39bff 58%, #ffb49a);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.75),
+    0 0 18px rgba(101, 132, 255, 0.42);
+}
+
+html[data-skin='lumen'] .house-crest__diamond svg {
+  display: none;
+}
+
+html[data-skin='lumen'] .stock-pile__well,
+html[data-skin='lumen'] .foundation {
+  border: 1px solid rgba(29, 29, 31, 0.085);
+  border-radius: var(--lume-radius);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.35)),
+    rgba(255, 255, 255, 0.24);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 2px 8px rgba(33, 39, 66, 0.035);
+}
+
+html[data-skin='lumen'] .stock-pile__well::before,
+html[data-skin='lumen'] .foundation::before {
+  inset: 6px;
+  border-color: rgba(29, 29, 31, 0.045);
+  border-radius: calc(var(--lume-radius) - 2px);
+}
+
+html[data-skin='lumen'] .stock-pile__well::after {
+  width: 20%;
+  background: linear-gradient(90deg, transparent, rgba(78, 108, 242, 0.3), transparent);
+  transform: translate(-50%, -50%);
+}
+
+html[data-skin='lumen'] .stock-pile:hover .stock-pile__well,
+html[data-skin='lumen'] .foundation:hover {
+  border-color: rgba(78, 108, 242, 0.3);
+  background-color: rgba(255, 255, 255, 0.6);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 5px 18px rgba(58, 76, 166, 0.07);
+}
+
+html[data-skin='lumen'] .stock-pile:active .stock-pile__well {
+  background-color: rgba(255, 255, 255, 0.82);
+}
+
+html[data-skin='lumen'] .stock-empty {
+  color: #9a9aa2;
+}
+
+html[data-skin='lumen'] .stock-empty span,
+html[data-skin='lumen'] .waste-empty span {
+  font-family: var(--font-cn);
+  letter-spacing: 0.16em;
+}
+
+html[data-skin='lumen'] .waste-empty {
+  border: 1px solid rgba(29, 29, 31, 0.065);
+  border-radius: var(--lume-radius);
+  color: #a0a0a7;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+html[data-skin='lumen'] .foundation__empty {
+  color: #a0a0a7;
+}
+
+html[data-skin='lumen'] .foundation[data-suit='H'] .foundation__empty,
+html[data-skin='lumen'] .foundation[data-suit='D'] .foundation__empty {
+  color: #c68d8b;
+}
+
+html[data-skin='lumen'] .foundation__empty b {
+  color: #8b8b92;
+  font-family: var(--font-ui);
+  font-weight: 400;
+  letter-spacing: 0.03em;
+}
+
+html[data-skin='lumen'] .foundation.has-card {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+html[data-skin='lumen'] .stock-badge {
+  border: 1px solid rgba(29, 29, 31, 0.1);
+  color: var(--lume-ink);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 3px 10px rgba(33, 39, 66, 0.1);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+/* The waste/foundation labels sit on white playing cards, so they use a dark
+   chip for legibility; the stock count stays light on the dark card back. */
+html[data-skin='lumen'] .waste-badge {
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #fff;
+  background: rgba(29, 29, 31, 0.86);
+  box-shadow: 0 3px 10px rgba(26, 30, 48, 0.16);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+html[data-skin='lumen'] .stock-badge {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+html[data-skin='lumen'] .waste-badge small {
+  color: rgba(255, 255, 255, 0.64);
+}
+
+html[data-skin='lumen'] .foundation__count {
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  color: #fff;
+  background: rgba(29, 29, 31, 0.82);
+  box-shadow: 0 2px 7px rgba(22, 26, 44, 0.16);
+  font-family: var(--font-ui);
+  font-weight: 500;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+html[data-skin='lumen'] .pile-base {
+  border: 1px solid rgba(29, 29, 31, 0.08);
+  border-radius: var(--lume-radius);
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.4), transparent 58%),
+    rgba(255, 255, 255, 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 2px 8px rgba(33, 39, 66, 0.025);
+}
+
+html[data-skin='lumen'] .pile-base::before {
+  border-color: rgba(29, 29, 31, 0.035);
+  border-radius: calc(var(--lume-radius) - 2px);
+}
+
+html[data-skin='lumen'] .pile-base__mark {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(29, 29, 31, 0.16);
+}
+
+html[data-skin='lumen'] .pile-base__mark::after {
+  display: none;
+}
+
+html[data-skin='lumen'] .tableau-col::after {
+  border-radius: calc(var(--lume-radius) + 4px);
+  background: linear-gradient(180deg, rgba(78, 108, 242, 0.055), transparent 72%);
+}
+
+/* Cards -------------------------------------------------------------------- */
+
+html[data-skin='lumen'] .card__paper {
+  border: 1px solid rgba(29, 29, 31, 0.11);
+  border-radius: var(--lume-radius);
+  color: var(--card-ink);
+  background:
+    radial-gradient(circle at 26% 12%, rgba(255, 255, 255, 0.92), transparent 48%),
+    linear-gradient(150deg, #fffefb 0%, #fdfbf6 62%, #f5f1e8 100%);
+  box-shadow:
+    0 1px 1px rgba(32, 35, 50, 0.08),
+    0 3px 8px rgba(32, 35, 50, 0.09),
+    0 12px 28px rgba(32, 35, 50, 0.045);
+  transition:
+    box-shadow 180ms ease,
+    filter 180ms ease;
+}
+
+html[data-skin='lumen'] .card__paper::before {
+  display: none;
+}
+
+html[data-skin='lumen'] .card__paper::after {
+  opacity: 0.08;
+}
+
+html[data-skin='lumen'] .card--ink {
+  --card-ink: #252528;
+}
+
+html[data-skin='lumen'] .card--red {
+  --card-ink: var(--card-red);
+}
+
+html[data-skin='lumen'] .card__rank {
+  font-family: var(--font-ui);
+  font-size: clamp(13px, calc(var(--card-w) * 0.205), 27px);
+  font-weight: 500;
+  letter-spacing: -0.045em;
+}
+
+html[data-skin='lumen'] .card__suit {
+  width: clamp(7px, calc(var(--card-w) * 0.115), 15px);
+  height: clamp(7px, calc(var(--card-w) * 0.115), 15px);
+}
+
+html[data-skin='lumen'] .card__pip {
+  opacity: 0.78;
+}
+
+html[data-skin='lumen'] .card.is-interactive .card__paper {
+  box-shadow:
+    0 1px 1px rgba(32, 35, 50, 0.08),
+    0 4px 10px rgba(32, 35, 50, 0.1),
+    0 14px 30px rgba(32, 35, 50, 0.05);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html[data-skin='lumen'] .card.is-interactive:hover .card__paper {
+    filter: none;
+    box-shadow:
+      0 2px 3px rgba(32, 35, 50, 0.07),
+      0 10px 26px rgba(48, 60, 110, 0.13);
+  }
+}
+
+html[data-skin='lumen'] .card.is-selected .card__paper {
+  box-shadow:
+    0 0 0 2px var(--lume-accent),
+    0 0 22px rgba(78, 108, 242, 0.2),
+    0 10px 26px rgba(32, 35, 50, 0.14);
+}
+
+html[data-skin='lumen'] .card.is-dragging-source {
+  opacity: 0.13;
+}
+
+html[data-skin='lumen'] .card.is-hint-source .card__paper {
+  animation: lumenHintPulse 1.5s ease-in-out infinite;
+}
+
+html[data-skin='lumen'] .card.is-hint-target .card__paper,
+html[data-skin='lumen'] .card.is-drop-target .card__paper {
+  box-shadow:
+    0 0 0 2px var(--lume-accent),
+    0 0 24px rgba(78, 108, 242, 0.22),
+    0 8px 20px rgba(32, 35, 50, 0.1);
+}
+
+html[data-skin='lumen'] .card.is-drag-hover .card__paper,
+html[data-skin='lumen'] body.is-dragging .card.is-drop-target .card__paper {
+  box-shadow:
+    0 0 0 3px var(--lume-accent),
+    0 0 30px rgba(78, 108, 242, 0.26),
+    0 12px 28px rgba(32, 35, 50, 0.14);
+}
+
+html[data-skin='lumen'] .ace__rays,
+html[data-skin='lumen'] .ace__ring,
+html[data-skin='lumen'] .ace__name {
+  display: none;
+}
+
+html[data-skin='lumen'] .ace {
+  background: radial-gradient(circle at 50% 50%, rgba(78, 108, 242, 0.055), transparent 58%);
+}
+
+html[data-skin='lumen'] .ace__glyph {
+  width: 44%;
+  height: 44%;
+  filter: none;
+}
+
+html[data-skin='lumen'] .card--court .card__art {
+  top: 12%;
+  right: 10%;
+  bottom: 11%;
+  left: 10%;
+}
+
+html[data-skin='lumen'] .court {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+html[data-skin='lumen'] .court::before,
+html[data-skin='lumen'] .court__kicker,
+html[data-skin='lumen'] .court__crown,
+html[data-skin='lumen'] .court__rule i {
+  display: none;
+}
+
+html[data-skin='lumen'] .court__letter {
+  color: var(--card-ink);
+  font-family: var(--font-ui);
+  font-size: clamp(23px, calc(var(--card-w) * 0.43), 54px);
+  font-weight: 300;
+  letter-spacing: -0.06em;
+  text-shadow: none;
+}
+
+html[data-skin='lumen'] .court__rule {
+  width: auto;
+  margin-top: 4%;
+  gap: 0;
+  opacity: 0.55;
+}
+
+html[data-skin='lumen'] .court__rule svg {
+  width: clamp(7px, calc(var(--card-w) * 0.105), 14px);
+  height: clamp(7px, calc(var(--card-w) * 0.105), 14px);
+}
+
+/* Dark glass card backs. */
+
+html[data-skin='lumen'] .card__back {
+  border: 1px solid rgba(18, 20, 28, 0.5);
+  border-radius: var(--lume-radius);
+  background-color: #1a1b20;
+  background-image:
+    radial-gradient(circle at 28% 18%, rgba(255, 255, 255, 0.14), transparent 38%),
+    radial-gradient(circle at 82% 88%, rgba(128, 151, 255, 0.16), transparent 48%),
+    linear-gradient(150deg, #2a2b32 0%, #1b1c21 56%, #15161a 100%);
+  box-shadow:
+    0 2px 3px rgba(20, 22, 32, 0.18),
+    0 7px 18px rgba(20, 22, 32, 0.16),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035);
+}
+
+html[data-skin='lumen'] .card__back::before {
+  inset: 5px;
+  border-color: rgba(255, 255, 255, 0.11);
+  border-radius: calc(var(--lume-radius) - 2px);
+  box-shadow: none;
+}
+
+html[data-skin='lumen'] .card__back::after {
+  top: 50%;
+  left: 50%;
+  width: 56%;
+  height: 56%;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+html[data-skin='lumen'] .card__back-medallion {
+  width: 34%;
+  border: 0;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: conic-gradient(
+    from 210deg,
+    rgba(111, 141, 255, 0.96),
+    rgba(212, 185, 255, 0.9) 28%,
+    rgba(255, 194, 172, 0.9) 54%,
+    rgba(143, 220, 202, 0.94) 78%,
+    rgba(111, 141, 255, 0.96)
+  );
+  box-shadow:
+    0 0 0 3px rgba(20, 21, 27, 0.9),
+    0 0 0 4px rgba(255, 255, 255, 0.1),
+    0 5px 16px rgba(0, 0, 0, 0.28);
+}
+
+html[data-skin='lumen'] .card__back-medallion::before,
+html[data-skin='lumen'] .card__back-medallion::after {
+  display: none;
+}
+
+html[data-skin='lumen'] .card__back-seal {
+  transform: none;
+  background: rgba(20, 21, 27, 0.4);
+  border-radius: 50%;
+}
+
+html[data-skin='lumen'] .card__back-seal svg {
+  display: none;
+}
+
+html[data-skin='lumen'] .card__back-seal::before {
+  content: '✦';
+  color: #fff;
+  font-family: var(--font-ui);
+  font-size: clamp(7px, calc(var(--card-w) * 0.12), 15px);
+  line-height: 1;
+  text-shadow: 0 1px 5px rgba(0, 0, 0, 0.35);
+}
+
+html[data-skin='lumen'] .card__back-corners {
+  display: none;
+}
+
+/* Drag ghost and badges. */
+
+html[data-skin='lumen'] .drag-stack .card__paper {
+  box-shadow:
+    0 0 0 1.5px rgba(78, 108, 242, 0.4),
+    0 8px 24px rgba(30, 36, 62, 0.2);
+}
+
+html[data-skin='lumen'] .drag-stack.is-snapped .card__paper {
+  box-shadow:
+    0 0 0 2.5px var(--lume-accent),
+    0 0 24px rgba(78, 108, 242, 0.24),
+    0 10px 26px rgba(30, 36, 62, 0.18);
+}
+
+html[data-skin='lumen'] .drag-stack__count {
+  border-color: rgba(255, 255, 255, 0.72);
+  color: #fff;
+  background: #1d1d1f;
+  box-shadow: 0 4px 12px rgba(19, 22, 34, 0.18);
+  font-family: var(--font-ui);
+  font-size: 10px;
+}
+
+/* Interaction targets — cool spectral light instead of gold. */
+
+html[data-skin='lumen'] .foundation.is-valid-target,
+html[data-skin='lumen'] .foundation.is-drag-over {
+  border-color: rgba(78, 108, 242, 0.5);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(244, 246, 255, 0.5)),
+    rgba(255, 255, 255, 0.24);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 0 18px rgba(78, 108, 242, 0.1);
+}
+
+html[data-skin='lumen'] body.is-dragging .foundation.is-valid-target {
+  border-color: var(--lume-accent);
+  background-color: rgba(255, 255, 255, 0.78);
+  box-shadow:
+    inset 0 0 22px rgba(78, 108, 242, 0.07),
+    0 0 0 1px rgba(78, 108, 242, 0.1),
+    0 0 24px rgba(78, 108, 242, 0.12);
+}
+
+html[data-skin='lumen'] .foundation.is-hint-target {
+  border-color: var(--lume-accent);
+  animation: lumenTargetPulse 1.5s ease-in-out infinite;
+}
+
+html[data-skin='lumen'] .tableau-col.is-valid-target::after {
+  background: linear-gradient(180deg, rgba(78, 108, 242, 0.08), transparent 72%);
+}
+
+html[data-skin='lumen'] .tableau-col.is-valid-target .pile-base {
+  border-color: rgba(78, 108, 242, 0.3);
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.52), transparent 58%),
+    rgba(255, 255, 255, 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 0 18px rgba(78, 108, 242, 0.05);
+}
+
+html[data-skin='lumen'] body.is-dragging .tableau-col.is-valid-target .pile-base {
+  border-color: var(--lume-accent);
+  background-color: rgba(255, 255, 255, 0.56);
+  box-shadow:
+    inset 0 0 28px rgba(78, 108, 242, 0.06),
+    0 0 0 1px rgba(78, 108, 242, 0.08),
+    0 0 22px rgba(78, 108, 242, 0.09);
+}
+
+html[data-skin='lumen'] .tableau-col.is-drag-over .pile-base {
+  border-color: var(--lume-accent);
+  background-color: rgba(255, 255, 255, 0.68);
+  box-shadow:
+    inset 0 0 30px rgba(78, 108, 242, 0.07),
+    0 0 24px rgba(78, 108, 242, 0.11);
+}
+
+html[data-skin='lumen'] .tableau-col.is-hint-target .pile-base {
+  border-color: var(--lume-accent);
+  animation: lumenTargetPulse 1.5s ease-in-out infinite;
+}
+
+html[data-skin='lumen'] .stock-pile.is-hint-target .stock-pile__well {
+  border-color: var(--lume-accent);
+  animation: lumenTargetPulse 1.5s ease-in-out infinite;
+}
+
+html[data-skin='lumen'] .stock-pile.is-hint-target .stock-layer .card__back {
+  box-shadow:
+    0 0 0 2px rgba(78, 108, 242, 0.75),
+    0 0 24px rgba(78, 108, 242, 0.16);
+}
+
+html[data-skin='lumen'] .card.is-invalid-shake .card__paper,
+html[data-skin='lumen'] .foundation.is-invalid-shake,
+html[data-skin='lumen'] .tableau-col.is-invalid-shake .pile-base,
+html[data-skin='lumen'] .stock-pile.is-invalid-shake .stock-pile__well {
+  border-color: rgba(211, 79, 69, 0.55);
+}
+
+/* Footer ------------------------------------------------------------------- */
+
+html[data-skin='lumen'] .statusbar {
+  padding: 9px 0 max(3px, env(safe-area-inset-bottom));
+}
+
+html[data-skin='lumen'] .statusbar__inner {
+  padding: 9px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-top-color: rgba(255, 255, 255, 0.86);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow:
+    0 10px 28px rgba(32, 38, 62, 0.055),
+    inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  -webkit-backdrop-filter: blur(18px) saturate(145%);
+  backdrop-filter: blur(18px) saturate(145%);
+}
+
+html[data-skin='lumen'] .statusbar__mark {
+  color: var(--lume-accent);
+  font-size: 8px;
+  text-shadow: 0 0 10px rgba(78, 108, 242, 0.34);
+}
+
+html[data-skin='lumen'] .statusbar__text {
+  color: #4f5058;
+  font-family: var(--font-cn);
+  font-size: clamp(10.5px, 0.84vw, 11.5px);
+  font-weight: 400;
+  letter-spacing: 0.025em;
+}
+
+html[data-skin='lumen'] .statusbar__text.is-accent {
+  color: var(--lume-accent-deep);
+}
+
+html[data-skin='lumen'] .draw-mode-chip {
+  padding: 4px 9px;
+  border: 1px solid rgba(29, 29, 31, 0.075);
+  border-radius: 999px;
+  color: var(--lume-sub);
+  background: rgba(255, 255, 255, 0.36);
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+}
+
+html[data-skin='lumen'] .save-indicator {
+  color: var(--lume-faint);
+}
+
+html[data-skin='lumen'] .save-indicator i {
+  background: var(--lume-mint);
+  box-shadow: 0 0 0 3px rgba(142, 220, 202, 0.12);
+}
+
+html[data-skin='lumen'] .save-indicator.is-saving i {
+  background: var(--lume-accent);
+  box-shadow: 0 0 8px rgba(78, 108, 242, 0.4);
+}
+
+html[data-skin='lumen'] .auto-finish {
+  padding: 6px 11px;
+  border: 1px solid #1d1d1f;
+  border-radius: 999px;
+  color: #fff;
+  background: #1d1d1f;
+  box-shadow: 0 4px 14px rgba(23, 26, 37, 0.14);
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  animation: lumenSoftGlow 2.4s ease-in-out infinite;
+}
+
+html[data-skin='lumen'] .auto-finish:hover {
+  background: #313136;
+}
+
+/* While dragging, avoid expensive live backdrop filtering. */
+html[data-skin='lumen'] body.is-dragging .topbar,
+html[data-skin='lumen'] body.is-dragging .statusbar__inner {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+/* Dialogs ------------------------------------------------------------------ */
+
+html[data-skin='lumen'] dialog.modal::backdrop,
+html[data-skin='lumen'] dialog.win-dialog::backdrop {
+  background: rgba(238, 240, 245, 0.58);
+  -webkit-backdrop-filter: blur(18px) saturate(0.9);
+  backdrop-filter: blur(18px) saturate(0.9);
+}
+
+html[data-skin='lumen'] .modal__panel,
+html[data-skin='lumen'] .win-panel {
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  border-radius: 28px;
+  background: rgba(253, 252, 250, 0.94);
+  box-shadow:
+    0 35px 100px rgba(30, 37, 64, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(30px) saturate(145%);
+  backdrop-filter: blur(30px) saturate(145%);
+  color: var(--lume-ink);
+}
+
+html[data-skin='lumen'] .modal__panel::before,
+html[data-skin='lumen'] .modal__panel::after,
+html[data-skin='lumen'] .win-panel::before,
+html[data-skin='lumen'] .win-panel::after {
+  display: none;
+}
+
+html[data-skin='lumen'] .modal__close {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: #77777e;
+  background: rgba(29, 29, 31, 0.045);
+}
+
+html[data-skin='lumen'] .modal__close:hover {
+  color: var(--lume-ink);
+  border-color: transparent;
+  background: rgba(29, 29, 31, 0.08);
+}
+
+html[data-skin='lumen'] .modal__crest {
+  width: 32px;
+  height: 32px;
+  margin-bottom: 17px;
+  border: 0;
+  border-radius: 50%;
+  transform: none;
+  background: conic-gradient(
+    from 210deg,
+    rgba(111, 141, 255, 0.95),
+    rgba(212, 185, 255, 0.92) 30%,
+    rgba(255, 194, 172, 0.92) 55%,
+    rgba(143, 220, 202, 0.92) 78%,
+    rgba(111, 141, 255, 0.95)
+  );
+  box-shadow:
+    0 0 0 5px rgba(255, 255, 255, 0.6),
+    0 6px 18px rgba(72, 92, 190, 0.18);
+}
+
+html[data-skin='lumen'] .modal__crest svg {
+  display: none;
+}
+
+html[data-skin='lumen'] .modal__crest::before {
+  content: '✦';
+  color: #fff;
+  font-family: var(--font-ui);
+  font-size: 12px;
+  line-height: 1;
+}
+
+html[data-skin='lumen'] .modal__eyebrow,
+html[data-skin='lumen'] .win-panel__eyebrow {
+  color: var(--lume-accent-deep);
+  font-size: 8px;
+  letter-spacing: 0.27em;
+}
+
+html[data-skin='lumen'] .modal__title,
+html[data-skin='lumen'] .win-panel__title {
+  color: var(--lume-ink);
+  font-family: var(--font-cn);
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+
+html[data-skin='lumen'] .modal__title {
+  font-size: clamp(29px, 4.2vw, 37px);
+}
+
+html[data-skin='lumen'] .modal__lede,
+html[data-skin='lumen'] .win-panel__lede {
+  color: var(--lume-sub);
+  font-family: var(--font-cn);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+html[data-skin='lumen'] .modal__note {
+  color: var(--lume-faint);
+}
+
+html[data-skin='lumen'] .btn {
+  min-height: 42px;
+  padding: 0 19px;
+  border-radius: 12px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.045em;
+}
+
+html[data-skin='lumen'] .btn--gold {
+  border-color: #1d1d1f;
+  color: #fff;
+  background: #1d1d1f;
+  box-shadow:
+    0 6px 18px rgba(23, 26, 37, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+html[data-skin='lumen'] .btn--gold:hover {
+  background: #313136;
+  filter: none;
+}
+
+html[data-skin='lumen'] .btn--quiet {
+  border-color: rgba(29, 29, 31, 0.08);
+  color: var(--lume-sub);
+  background: rgba(29, 29, 31, 0.045);
+}
+
+html[data-skin='lumen'] .btn--quiet:hover {
+  color: var(--lume-ink);
+  border-color: rgba(29, 29, 31, 0.12);
+  background: rgba(29, 29, 31, 0.075);
+}
+
+html[data-skin='lumen'] .btn:active {
+  transform: scale(0.98);
+}
+
+html[data-skin='lumen'] .mode-option__inner {
+  border-color: rgba(29, 29, 31, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+html[data-skin='lumen'] .mode-option:hover .mode-option__inner {
+  border-color: rgba(29, 29, 31, 0.15);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+html[data-skin='lumen'] .mode-option input:checked + .mode-option__inner {
+  border-color: rgba(78, 108, 242, 0.55);
+  background:
+    linear-gradient(90deg, rgba(78, 108, 242, 0.075), transparent 70%),
+    rgba(255, 255, 255, 0.62);
+  box-shadow: inset 0 0 0 1px rgba(78, 108, 242, 0.06);
+}
+
+html[data-skin='lumen'] .mode-option__number {
+  color: var(--lume-accent);
+  font-family: var(--font-ui);
+  font-size: 24px;
+  font-weight: 300;
+}
+
+html[data-skin='lumen'] .mode-option__name {
+  color: var(--lume-ink);
+  font-family: var(--font-cn);
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+html[data-skin='lumen'] .mode-option__desc {
+  color: var(--lume-sub);
+}
+
+html[data-skin='lumen'] .mode-option__check {
+  border-color: rgba(29, 29, 31, 0.14);
+  background: rgba(255, 255, 255, 0.4);
+}
+
+html[data-skin='lumen'] .mode-option input:checked + .mode-option__inner .mode-option__check {
+  border-color: var(--lume-accent);
+  color: #fff;
+  background: var(--lume-accent);
+}
+
+/* Settings menu ------------------------------------------------------------ */
+
+html[data-skin='lumen'] .menu-list {
+  border-top-color: rgba(29, 29, 31, 0.07);
+}
+
+html[data-skin='lumen'] .menu-row {
+  padding: 14px 2px;
+  border-bottom-color: rgba(29, 29, 31, 0.07);
+}
+
+html[data-skin='lumen'] .menu-row__icon {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 9px;
+  color: #4b4b50;
+  background: rgba(29, 29, 31, 0.045);
+}
+
+html[data-skin='lumen'] .menu-row__name {
+  color: var(--lume-ink);
+  font-family: var(--font-cn);
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+html[data-skin='lumen'] .menu-row__desc {
+  color: var(--lume-sub);
+  font-size: 10.5px;
+}
+
+html[data-skin='lumen'] .menu-row--button:hover .menu-row__name {
+  color: var(--lume-accent-deep);
+}
+
+html[data-skin='lumen'] .menu-row__chevron {
+  color: #b2b2b8;
+}
+
+html[data-skin='lumen'] .switch {
+  width: 44px;
+  height: 26px;
+  border: 0;
+  background: rgba(29, 29, 31, 0.14);
+}
+
+html[data-skin='lumen'] .switch span {
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(24, 28, 44, 0.18);
+}
+
+html[data-skin='lumen'] .switch[aria-checked='true'] {
+  border-color: transparent;
+  background: #34c759;
+}
+
+html[data-skin='lumen'] .switch[aria-checked='true'] span {
+  background: #fff;
+  transform: translateX(18px);
+}
+
+html[data-skin='lumen'] .best-card {
+  border: 1px solid rgba(29, 29, 31, 0.065);
+  border-radius: 16px;
+  background: rgba(29, 29, 31, 0.03);
+}
+
+html[data-skin='lumen'] .best-card__eyebrow {
+  color: var(--lume-accent-deep);
+}
+
+html[data-skin='lumen'] .best-card__stats span {
+  color: var(--lume-sub);
+}
+
+html[data-skin='lumen'] .best-card__stats b {
+  color: var(--lume-ink);
+  font-family: var(--font-ui);
+  font-weight: 400;
+}
+
+html[data-skin='lumen'] .menu-footnote {
+  color: var(--lume-faint);
+}
+
+html[data-skin='lumen'] .menu-footnote b {
+  color: var(--lume-sub);
+}
+
+html[data-skin='lumen'] .app-version {
+  color: var(--lume-accent-deep);
+}
+
+html[data-skin='lumen'] .link-btn {
+  color: var(--lume-sub);
+  text-decoration-color: rgba(29, 29, 31, 0.16);
+}
+
+html[data-skin='lumen'] .link-btn:hover {
+  color: var(--lume-accent-deep);
+}
+
+/* Skin picker in the light material. */
+
+html[data-skin='lumen'] .skin-picker__legend {
+  color: var(--lume-sub);
+  font-family: var(--font-cn);
+}
+
+html[data-skin='lumen'] .skin-picker__legend span {
+  color: var(--lume-accent);
+}
+
+html[data-skin='lumen'] .skin-choice {
+  border-color: rgba(29, 29, 31, 0.08);
+  border-radius: 15px;
+  color: var(--lume-sub);
+  background: rgba(255, 255, 255, 0.44);
+}
+
+html[data-skin='lumen'] .skin-choice:hover {
+  border-color: rgba(29, 29, 31, 0.14);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+html[data-skin='lumen'] .skin-choice:has(input:checked) {
+  border-color: rgba(78, 108, 242, 0.55);
+  color: var(--lume-ink);
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow:
+    inset 0 0 0 1px rgba(78, 108, 242, 0.06),
+    0 4px 16px rgba(44, 58, 116, 0.05);
+}
+
+html[data-skin='lumen'] .skin-choice__preview {
+  border-radius: 9px;
+}
+
+html[data-skin='lumen'] .skin-choice__preview--salon {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+html[data-skin='lumen'] .skin-choice__preview--lumen {
+  border-color: rgba(29, 29, 31, 0.08);
+}
+
+html[data-skin='lumen'] .skin-choice__mini-card {
+  border-radius: 4px;
+}
+
+html[data-skin='lumen'] .skin-choice__copy b {
+  color: var(--lume-ink);
+  font-family: var(--font-cn);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+html[data-skin='lumen'] .skin-choice__copy small {
+  color: var(--lume-sub);
+}
+
+html[data-skin='lumen'] .skin-choice__check {
+  border-color: rgba(29, 29, 31, 0.12);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+html[data-skin='lumen'] .skin-choice:has(input:checked) .skin-choice__check {
+  border-color: var(--lume-accent);
+  color: #fff;
+  background: var(--lume-accent);
+}
+
+/* Rules */
+
+html[data-skin='lumen'] .rules-scroll {
+  scrollbar-color: rgba(29, 29, 31, 0.18) transparent;
+}
+
+html[data-skin='lumen'] .rules-scroll section {
+  border-top-color: rgba(29, 29, 31, 0.07);
+}
+
+html[data-skin='lumen'] .rules-scroll h3 {
+  color: var(--lume-ink);
+  font-family: var(--font-cn);
+  font-weight: 500;
+}
+
+html[data-skin='lumen'] .rules-scroll p {
+  color: var(--lume-sub);
+}
+
+html[data-skin='lumen'] .rules-scroll kbd {
+  border-color: rgba(29, 29, 31, 0.12);
+  color: var(--lume-sub);
+  background: rgba(29, 29, 31, 0.04);
+}
+
+/* Win dialog */
+
+html[data-skin='lumen'] .win-panel {
+  padding-top: clamp(30px, 5vw, 45px);
+  background:
+    radial-gradient(ellipse 70% 50% at 50% -2%, rgba(145, 169, 255, 0.2), transparent 66%),
+    rgba(253, 252, 250, 0.95);
+}
+
+html[data-skin='lumen'] .win-panel__laurel {
+  color: var(--lume-accent);
+}
+
+html[data-skin='lumen'] .win-panel__seal {
+  border: 0;
+  border-radius: 50%;
+  transform: none;
+  background: conic-gradient(
+    from 210deg,
+    rgba(111, 141, 255, 0.95),
+    rgba(212, 185, 255, 0.92) 28%,
+    rgba(255, 194, 172, 0.92) 54%,
+    rgba(143, 220, 202, 0.92) 78%,
+    rgba(111, 141, 255, 0.95)
+  );
+  box-shadow:
+    0 0 0 5px rgba(255, 255, 255, 0.7),
+    0 8px 24px rgba(72, 92, 190, 0.18);
+}
+
+html[data-skin='lumen'] .win-panel__seal svg {
+  fill: #fff;
+  transform: none;
+  filter: drop-shadow(0 1px 2px rgba(20, 24, 48, 0.18));
+}
+
+html[data-skin='lumen'] .win-stats {
+  border-top-color: rgba(29, 29, 31, 0.08);
+  border-bottom-color: rgba(29, 29, 31, 0.08);
+}
+
+html[data-skin='lumen'] .win-stats div + div {
+  border-left-color: rgba(29, 29, 31, 0.07);
+}
+
+html[data-skin='lumen'] .win-stats span {
+  color: var(--lume-sub);
+}
+
+html[data-skin='lumen'] .win-stats b {
+  color: var(--lume-ink);
+  font-family: var(--font-ui);
+  font-weight: 400;
+}
+
+html[data-skin='lumen'] .win-panel__record {
+  border-color: rgba(78, 108, 242, 0.22);
+  border-radius: 999px;
+  color: var(--lume-accent-deep);
+  background: rgba(78, 108, 242, 0.055);
+}
+
+/* Toast */
+
+html[data-skin='lumen'] .toast {
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 14px;
+  color: var(--lume-ink);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 14px 40px rgba(30, 37, 64, 0.15);
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+
+/* Auto-collect / win glows. */
+
+html[data-skin='lumen'] .app.is-auto-collecting .foundation {
+  animation: lumenAutoGlow 1.3s ease-in-out infinite alternate;
+}
+
+html[data-skin='lumen'] .app.is-auto-collecting .statusbar__mark {
+  color: var(--lume-accent);
+}
+
+html[data-skin='lumen'] .app.is-won .foundation .card__paper {
+  box-shadow:
+    0 0 0 1px rgba(78, 108, 242, 0.34),
+    0 0 22px rgba(78, 108, 242, 0.14),
+    0 4px 12px rgba(32, 35, 50, 0.09);
+  animation: lumenWinGlow 1.9s ease-in-out infinite alternate;
+}
+
+html[data-skin='lumen'] .modal__panel,
+html[data-skin='lumen'] .rules-scroll {
+  scrollbar-color: rgba(29, 29, 31, 0.2) transparent;
+}
+
+/* Responsive refinements -------------------------------------------------- */
+
+@media (max-width: 940px) {
+  html[data-skin='lumen'] .topbar {
+    padding: 8px 10px;
+    border-radius: 17px;
+    gap: 7px 10px;
+  }
+
+  html[data-skin='lumen'] .brand {
+    gap: 9px;
+  }
+
+  html[data-skin='lumen'] .brand__seal {
+    width: 33px;
+    height: 33px;
+  }
+
+  html[data-skin='lumen'] .brand__seal-inner {
+    width: 25px;
+    height: 25px;
+  }
+
+  html[data-skin='lumen'] .brand__title {
+    font-size: 22px;
+  }
+
+  html[data-skin='lumen'] .brand__eyebrow--lumen {
+    display: none;
+  }
+
+  html[data-skin='lumen'] .brand__zh {
+    font-size: 8.5px;
+    letter-spacing: 0.13em;
+  }
+
+  html[data-skin='lumen'] .stats {
+    gap: 14px;
+    padding: 2px 0;
+  }
+
+  html[data-skin='lumen'] .stat__value {
+    font-size: 17px;
+  }
+
+  html[data-skin='lumen'] .stat__label {
+    font-size: 7px;
+  }
+
+  html[data-skin='lumen'] .tool-btn,
+  html[data-skin='lumen'] .tool-btn--icon {
+    width: 37px;
+    height: 37px;
+    border-radius: 11px;
+  }
+
+  html[data-skin='lumen'] .new-game-btn {
+    height: 37px;
+    padding: 0 13px;
+    border-radius: 11px;
+    font-size: 10px;
+  }
+
+  html[data-skin='lumen'] .statusbar__inner {
+    padding: 8px 11px;
+    border-radius: 14px;
+  }
+}
+
+@media (max-width: 440px) {
+  html[data-skin='lumen'] .brand__title::after {
+    display: none;
+  }
+
+  html[data-skin='lumen'] .brand__seal {
+    width: 31px;
+    height: 31px;
+  }
+
+  html[data-skin='lumen'] .brand__seal-inner {
+    width: 23px;
+    height: 23px;
+  }
+
+  html[data-skin='lumen'] .brand__title {
+    font-size: 20px;
+  }
+
+  html[data-skin='lumen'] .tool-btn,
+  html[data-skin='lumen'] .tool-btn--icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  html[data-skin='lumen'] .new-game-btn {
+    height: 36px;
+    padding: 0 11px;
+  }
+
+  html[data-skin='lumen'] .statusbar__text {
+    font-size: 10px;
+  }
+
+  html[data-skin='lumen'] .modal__panel,
+  html[data-skin='lumen'] .win-panel {
+    border-radius: 23px;
+  }
+}
+
+@media (max-width: 360px) {
+  html[data-skin='lumen'] .brand__title {
+    font-size: 17.5px;
+    letter-spacing: -0.035em;
+  }
+
+  html[data-skin='lumen'] .brand__title::after {
+    display: none;
+  }
+
+  html[data-skin='lumen'] .toolbar {
+    gap: 4px;
+  }
+
+  html[data-skin='lumen'] .tool-btn,
+  html[data-skin='lumen'] .tool-btn--icon {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+  }
+
+  html[data-skin='lumen'] .new-game-btn {
+    flex: 0 0 auto;
+    height: 34px;
+    padding: 0 8px;
+    border-radius: 10px;
+    font-size: 9px;
+  }
+}
+
+/* Motion ------------------------------------------------------------------ */
+
+@keyframes lumenHintPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 2px rgba(78, 108, 242, 0.76),
+      0 0 18px rgba(78, 108, 242, 0.15),
+      0 8px 22px rgba(32, 35, 50, 0.1);
+  }
+  50% {
+    box-shadow:
+      0 0 0 3px rgba(78, 108, 242, 0.94),
+      0 0 30px rgba(78, 108, 242, 0.28),
+      0 10px 26px rgba(32, 35, 50, 0.12);
+  }
+}
+
+@keyframes lumenTargetPulse {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0 24px rgba(78, 108, 242, 0.035),
+      0 0 0 rgba(78, 108, 242, 0);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 32px rgba(78, 108, 242, 0.08),
+      0 0 18px rgba(78, 108, 242, 0.1);
+  }
+}
+
+@keyframes lumenAutoGlow {
+  0% {
+    box-shadow: 0 0 0 1px rgba(78, 108, 242, 0.08);
+  }
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(78, 108, 242, 0.3),
+      0 0 18px rgba(78, 108, 242, 0.13);
+  }
+}
+
+@keyframes lumenWinGlow {
+  0% {
+    box-shadow:
+      0 0 0 1px rgba(78, 108, 242, 0.22),
+      0 0 14px rgba(78, 108, 242, 0.1);
+  }
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(78, 108, 242, 0.46),
+      0 0 26px rgba(78, 108, 242, 0.2);
+  }
+}
+
+@keyframes lumenSoftGlow {
+  0%,
+  100% {
+    box-shadow: 0 4px 14px rgba(23, 26, 37, 0.12);
+  }
+  50% {
+    box-shadow:
+      0 4px 18px rgba(23, 26, 37, 0.16),
+      0 0 0 3px rgba(78, 108, 242, 0.08);
+  }
+}

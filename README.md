@@ -8,6 +8,16 @@
 <img src="screenshots/desktop.png" alt="Maison Pique 桌面界面" width="780">
 <img src="screenshots/iphone.png" alt="Maison Pique 手机界面" width="240">
 
+## 两套皮肤
+
+牌桌提供两套完整皮肤，随时可以在 **设置 → 桌面皮肤** 中切换，选择会保存在本机：
+
+- **翡翠沙龙**：默认的深绿与金色装饰艺术风格。
+- **流光 / Lumen**：暖白玻璃、光谱高光与极简牌面，参考 Apple Intelligence 的轻盈光感。
+
+<img src="screenshots/lumen-desktop.png" alt="流光皮肤桌面界面" width="780">
+<img src="screenshots/lumen-settings.png" alt="桌面皮肤选择界面" width="250">
+
 ## 开始游玩
 
 直接访问 **<https://MICEKING2007.github.io/maison-pique-solitaire/>**，无需安装。
@@ -26,8 +36,9 @@ python3 -m http.server 8123
 
 - 经典克朗代克规则：七列接龙、四座基础牌堆、牌堆循环与自动翻牌
 - 单张 / 三张两种发牌节奏
+- 两套可切换皮肤：翡翠沙龙 / 流光（Lumen），选择会自动保存
 - 触屏点选移动、拖拽移动、双击快速归位；支持多张连续牌整组移动
-- 不需要先点提示：拖动时所有有效落点会金色高亮，靠近即磁吸，松手落牌
+- 不需要先点提示：拖动时所有有效落点会高亮，靠近即磁吸，松手落牌
 - 撤销、智能提示（自动选中牌并标出落点，不再来回无效搬牌）
 - 计时、步数、计分与本地最佳纪录
 - 基础牌堆左下角显示 `A–X` 收牌进度，弃牌堆显示总张数，随时确认某张牌在哪里
@@ -52,7 +63,7 @@ python3 -m http.server 8123
 
 ## 开发与测试
 
-当前版本：**v1.1.1**。纯 HTML / CSS / ES Modules，无需构建。
+当前版本：**v1.2.0**。纯 HTML / CSS / ES Modules，无需构建。
 
 ```bash
 node --test tests/*.test.js
@@ -64,16 +75,18 @@ node --test tests/*.test.js
 
 GitHub Pages 直接从 `main` 分支根目录发布，无需构建步骤。页面、字体和 PWA 缓存全部使用相对路径。
 
-发布新版本时，同时更新 `index.html` 与 `js/app.js` 里的 `?v=` 查询串、`sw.js` 的 `CACHE_NAME` 和预缓存地址，确保用户不会停留在旧缓存。当前界面版本号显示在菜单底部（`v1.1.1`）。
+发布新版本时，同时更新 `index.html` 与 `js/app.js` 里的 `?v=` 查询串、`sw.js` 的 `CACHE_NAME` 和预缓存地址，确保用户不会停留在旧缓存。当前界面版本号显示在菜单底部（`v1.2.0`）。
 
 ## 目录
 
 ```
 index.html              页面结构
-styles.css              视觉系统与响应式布局
+styles.css              视觉系统与响应式基础
+lumen.css               流光皮肤样式层
 js/engine.js            可独立测试的牌局规则引擎
-js/app.js               界面、拖拽、存档、音效与动效
-manifest.webmanifest    PWA 清单
+js/app.js               界面、拖拽、存档、音效、皮肤切换与动效
+manifest.webmanifest    默认 PWA 清单
+manifest-lumen.webmanifest 流光 PWA 清单（浅色主题）
 sw.js                   离线缓存 Service Worker
 assets/                 图标与 PWA 视觉资源
 fonts/                  本地字体文件与许可
